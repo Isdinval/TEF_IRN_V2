@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Exercice } from '@/lib/supabase'
+import { Icons } from '@/components/layout/ui/icons'
 
 type FeedbackState = {
   correct: boolean
@@ -60,7 +61,6 @@ export default function ExercicesPage() {
       setScore(s => ({ ...s, total: s.total + 1 }))
     }
 
-    // Save result
     await supabase.from('user_exercice_results').insert({
       user_id: user!.id,
       exercice_id: current.id,
@@ -79,6 +79,7 @@ export default function ExercicesPage() {
       message: isCorrect ? 'Correct ! Il n\'y a effectivement pas de faute.' : `Incorrect. L'erreur se trouve dans « ${current.mots[current.mot_erreur_index!]} »`,
       explication: current.explication,
     })
+
     setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }))
 
     await supabase.from('user_exercice_results').insert({
@@ -107,6 +108,7 @@ export default function ExercicesPage() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [feedback, nextExercice])
 
+  // Résultats finaux
   if (finished) {
     const pct = Math.round((score.correct / score.total) * 100)
     return (
@@ -124,14 +126,44 @@ export default function ExercicesPage() {
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
-                onClick={() => { setCurrentIndex(0); setFeedback(null); setScore({ correct: 0, total: 0 }); setFinished(false); setStartTime(Date.now()) }}
-                style={{ backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '2px', padding: '12px 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                onClick={() => {
+                  setCurrentIndex(0)
+                  setFeedback(null)
+                  setScore({ correct: 0, total: 0 })
+                  setFinished(false)
+                  setStartTime(Date.now())
+                }}
+                style={{ 
+                  backgroundColor: 'var(--color-primary)', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '2px', 
+                  padding: '12px 24px', 
+                  fontSize: '11px', 
+                  fontWeight: 600, 
+                  letterSpacing: '0.15em', 
+                  textTransform: 'uppercase', 
+                  cursor: 'pointer', 
+                  fontFamily: 'var(--font-body)' 
+                }}
               >
                 Recommencer
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
-                style={{ backgroundColor: 'transparent', color: 'var(--color-text)', border: '1px solid var(--color-muted)', borderRadius: '2px', padding: '12px 24px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                style={{ 
+                  backgroundColor: 'transparent', 
+                  color: 'var(--color-text)', 
+                  border: '1px solid var(--color-muted)', 
+                  borderRadius: '2px', 
+                  padding: '12px 24px', 
+                  fontSize: '11px', 
+                  fontWeight: 600, 
+                  letterSpacing: '0.15em', 
+                  textTransform: 'uppercase', 
+                  cursor: 'pointer', 
+                  fontFamily: 'var(--font-body)' 
+                }}
               >
                 Tableau de bord
               </button>
@@ -157,9 +189,21 @@ export default function ExercicesPage() {
       }}>
         <button
           onClick={() => router.push('/dashboard')}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            background: 'none', 
+            border: 'none', 
+            cursor: 'pointer', 
+            color: 'var(--color-text)', 
+            fontSize: '11px', 
+            fontWeight: 600, 
+            letterSpacing: '0.1em', 
+            textTransform: 'uppercase' 
+          }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: 'var(--color-muted)' }}>arrow_back</span>
+          <Icons.arrowBack size={20} strokeWidth={2.5} />
           Quitter l'exercice
         </button>
         <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)' }}>
@@ -173,7 +217,15 @@ export default function ExercicesPage() {
       </div>
 
       {/* Score */}
-      <div style={{ padding: '12px 40px', borderBottom: '1px solid var(--color-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-background)', flexShrink: 0 }}>
+      <div style={{ 
+        padding: '12px 40px', 
+        borderBottom: '1px solid var(--color-muted)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        backgroundColor: 'var(--color-background)', 
+        flexShrink: 0 
+      }}>
         <span style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
           Question {currentIndex + 1} / {exercices.length}
         </span>
@@ -201,7 +253,15 @@ export default function ExercicesPage() {
             alignItems: 'center',
           }}>
             {/* Instruction */}
-            <h2 style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '64px', textAlign: 'center' }}>
+            <h2 style={{ 
+              fontSize: '11px', 
+              fontWeight: 600, 
+              letterSpacing: '0.15em', 
+              textTransform: 'uppercase', 
+              color: 'var(--color-muted)', 
+              marginBottom: '64px', 
+              textAlign: 'center' 
+            }}>
               Cliquez sur le mot contenant une erreur
             </h2>
 
@@ -219,31 +279,17 @@ export default function ExercicesPage() {
                   <span
                     key={i}
                     onClick={() => handleWordClick(i)}
+                    className="word-item"
                     style={{
                       fontFamily: 'var(--font-heading)',
                       fontSize: '32px',
                       cursor: feedback ? 'default' : 'pointer',
                       padding: '4px 8px',
                       borderRadius: '2px',
-                      border: '1px solid transparent',
                       transition: 'all 0.15s',
                       color: isError ? 'var(--color-accent)' : 'var(--color-text)',
                       textDecoration: isError ? 'underline' : 'none',
                       textDecorationColor: 'rgba(217,42,42,0.4)',
-                    }}
-                    onMouseEnter={e => {
-                      if (!feedback) {
-                        ;(e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-hover-blue)'
-                        ;(e.currentTarget as HTMLElement).style.color = 'var(--color-primary)'
-                        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(142,150,164,0.3)'
-                      }
-                    }}
-                    onMouseLeave={e => {
-                      if (!feedback) {
-                        ;(e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
-                        ;(e.currentTarget as HTMLElement).style.color = 'var(--color-text)'
-                        ;(e.currentTarget as HTMLElement).style.borderColor = 'transparent'
-                      }
                     }}
                   >
                     {mot}
@@ -270,8 +316,6 @@ export default function ExercicesPage() {
                   fontFamily: 'var(--font-body)',
                   transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary)'; ;(e.currentTarget as HTMLElement).style.color = 'var(--color-primary)' }}
-                onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--color-muted)'; ;(e.currentTarget as HTMLElement).style.color = 'var(--color-text)' }}
               >
                 Il n'y a pas de faute
               </button>
@@ -288,11 +332,18 @@ export default function ExercicesPage() {
                 borderRadius: '2px',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '22px', color: feedback.correct ? '#059669' : 'var(--color-accent)', fontVariationSettings: "'FILL' 1", flexShrink: 0 }}>
-                    {feedback.correct ? 'check_circle' : 'cancel'}
-                  </span>
+                  {feedback.correct ? (
+                    <Icons.checkCircle size={22} strokeWidth={2.5} style={{ color: '#059669', flexShrink: 0 }} />
+                  ) : (
+                    <Icons.cancel size={22} strokeWidth={2.5} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+                  )}
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: feedback.correct ? '#065F46' : 'var(--color-accent)', marginBottom: '6px' }}>
+                    <p style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 600, 
+                      color: feedback.correct ? '#065F46' : 'var(--color-accent)', 
+                      marginBottom: '6px' 
+                    }}>
                       {feedback.message}
                     </p>
                     <p style={{ fontSize: '14px', color: 'var(--color-text)', lineHeight: 1.6 }}>
@@ -300,6 +351,7 @@ export default function ExercicesPage() {
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={nextExercice}
                   style={{
@@ -325,6 +377,15 @@ export default function ExercicesPage() {
           </div>
         )}
       </main>
+
+      {/* Styles */}
+      <style jsx>{`
+        .word-item:hover {
+          background-color: var(--color-hover-blue);
+          color: var(--color-primary);
+          border-color: rgba(142,150,164,0.3);
+        }
+      `}</style>
     </AppLayout>
   )
 }
