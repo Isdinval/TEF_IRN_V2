@@ -4,7 +4,7 @@ import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Module, UserModuleProgress } from '@/lib/supabase'
-import { Icons } from '@/components/layout/ui/icons'   // ← Import ajouté
+import { Icons } from '@/components/layout/ui/icons'
 
 const CATEGORIES = ['Grammaire', 'Vocabulaire', 'Culture', 'Méthodologie'] as const
 
@@ -16,13 +16,17 @@ export default function Bibliotheque() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { if (!user) return; loadData() }, [user])
+  useEffect(() => { 
+    if (!user) return
+    loadData() 
+  }, [user])
 
   const loadData = async () => {
     const [{ data: modulesData }, { data: progressData }] = await Promise.all([
       supabase.from('modules').select('*').order('ordre', { ascending: true }),
       supabase.from('user_module_progress').select('*').eq('user_id', user!.id),
     ])
+
     setModules(modulesData || [])
     const progressMap = new Map<string, UserModuleProgress>()
     progressData?.forEach(p => progressMap.set(p.module_id, p))
@@ -153,27 +157,12 @@ export default function Bibliotheque() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {filteredModules.map(module => (
-              <Link href={`/lecon/${module.id}`} key={module.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <article
-                  style={{ 
-                    backgroundColor: 'var(--color-surface)', 
-                    border: '1px solid rgba(142,150,164,0.4)', 
-                    borderRadius: '2px', 
-                    padding: '24px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    cursor: 'pointer', 
-                    transition: 'all 0.15s' 
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-hover-blue)'
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,51,204,0.4)'
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-surface)'
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(142,150,164,0.4)'
-                  }}
-                >
+              <Link 
+                href={`/lecon/${module.id}`} 
+                key={module.id} 
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <article className="module-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                     <span style={{ 
                       fontSize: '11px', 
@@ -257,6 +246,24 @@ export default function Bibliotheque() {
           </div>
         )}
       </div>
+
+      {/* Styles pour le hover (recommandé) */}
+      <style jsx>{`
+        .module-card {
+          background-color: var(--color-surface);
+          border: 1px solid rgba(142,150,164,0.4);
+          border-radius: 2px;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .module-card:hover {
+          background-color: var(--color-hover-blue);
+          border-color: rgba(0,51,204,0.4);
+        }
+      `}</style>
     </AppLayout>
   )
 }
