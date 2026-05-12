@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Message } from '@/lib/supabase'
+import { Icons } from '@/components/layout/ui/icons'
 
 const SUJET = 'Convaincre un ami de participer à un projet de quartier'
 
@@ -14,7 +15,8 @@ export default function CoachOralPage() {
   const [hints, setHints] = useState<string>('')
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
-   const [isListening, setIsListening] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+
   const chatEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const recognitionRef = useRef<any>(null)
@@ -23,8 +25,8 @@ export default function CoachOralPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Speech Recognition
   useEffect(() => {
-    // Initialize speech recognition
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       if (SpeechRecognition) {
@@ -41,10 +43,7 @@ export default function CoachOralPage() {
           setInput(transcript)
         }
 
-        recognitionRef.current.onend = () => {
-          setIsListening(false)
-        }
-
+        recognitionRef.current.onend = () => setIsListening(false)
         recognitionRef.current.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error)
           setIsListening(false)
@@ -53,9 +52,7 @@ export default function CoachOralPage() {
     }
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
+      if (recognitionRef.current) recognitionRef.current.stop()
     }
   }, [])
 
@@ -66,14 +63,15 @@ export default function CoachOralPage() {
 
   const initConversation = async () => {
     setInitialized(true)
-    // Start conversation with examiner's first message
     setLoading(true)
+
     try {
       const res = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [], sujet: SUJET, lastUserMessage: null }),
       })
+
       const data = await res.json()
 
       const firstMsg: Message = {
@@ -86,13 +84,13 @@ export default function CoachOralPage() {
       setMessages(newMessages)
       if (data.hints) setHints(data.hints)
 
-      // Create conversation in DB
       const { data: conv } = await supabase.from('conversations_coach').insert({
         user_id: user!.id,
         sujet: SUJET,
         messages: newMessages,
         statut: 'en_cours',
       }).select().single()
+
       if (conv) setConversationId(conv.id)
     } catch (err) {
       console.error(err)
@@ -120,6 +118,7 @@ export default function CoachOralPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages, sujet: SUJET, lastUserMessage: input.trim() }),
       })
+
       const data = await res.json()
 
       const examinerMsg: Message = {
@@ -132,7 +131,6 @@ export default function CoachOralPage() {
       setMessages(finalMessages)
       if (data.hints) setHints(data.hints)
 
-      // Update DB
       if (conversationId) {
         await supabase.from('conversations_coach').update({
           messages: finalMessages,
@@ -142,6 +140,7 @@ export default function CoachOralPage() {
     } catch (err) {
       console.error(err)
     }
+
     setLoading(false)
     textareaRef.current?.focus()
   }
@@ -165,7 +164,7 @@ export default function CoachOralPage() {
 
   const toggleMicrophone = () => {
     if (!recognitionRef.current) {
-      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Veuillez utiliser Chrome ou Edge.')
+      alert("La reconnaissance vocale n'est pas supportée par votre navigateur. Veuillez utiliser Chrome ou Edge.")
       return
     }
 
@@ -181,7 +180,7 @@ export default function CoachOralPage() {
       }
     }
   }
-  
+
   return (
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -203,16 +202,32 @@ export default function CoachOralPage() {
               Sujet : {SUJET}
             </p>
           </div>
+
           <button
             onClick={resetConversation}
-            style={{ background: 'none', border: '1px solid var(--color-muted)', borderRadius: '2px', cursor: 'pointer', color: 'var(--color-muted)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 16px', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{
+              background: 'none',
+              border: '1px solid var(--color-muted)',
+              borderRadius: '2px',
+              cursor: 'pointer',
+              color: 'var(--color-muted)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              padding: '8px 16px',
+              fontFamily: 'var(--font-body)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>refresh</span>
+            <Icons.refresh size={16} strokeWidth={2.5} />
             Nouveau sujet
           </button>
         </header>
 
-        {/* Constrained chat column */}
+        {/* Chat Container */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
           <div style={{
             width: '100%',
@@ -224,7 +239,7 @@ export default function CoachOralPage() {
             backgroundColor: 'var(--color-surface)',
             overflow: 'hidden',
           }}>
-            {/* Chat history */}
+            {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '32px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
               {messages.length === 0 && !loading && (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-muted)', fontSize: '14px' }}>
@@ -243,7 +258,6 @@ export default function CoachOralPage() {
                     flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
                   }}
                 >
-                  {/* Avatar */}
                   <div style={{ flexShrink: 0 }}>
                     <div style={{
                       width: '40px',
@@ -255,13 +269,14 @@ export default function CoachOralPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '22px', color: msg.role === 'examiner' ? 'var(--color-text)' : 'white' }}>
-                        {msg.role === 'examiner' ? 'account_balance' : 'person'}
-                      </span>
+                      {msg.role === 'examiner' ? (
+                        <Icons.accountBalance size={22} strokeWidth={2} />
+                      ) : (
+                        <Icons.user size={22} strokeWidth={2} style={{ color: 'white' }} />
+                      )}
                     </div>
                   </div>
 
-                  {/* Bubble */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
                       <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-text)' }}>
@@ -269,6 +284,7 @@ export default function CoachOralPage() {
                       </span>
                       <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>{msg.timestamp}</span>
                     </div>
+
                     <div style={{
                       padding: '16px 20px',
                       borderRadius: '2px',
@@ -286,17 +302,37 @@ export default function CoachOralPage() {
 
               {loading && (
                 <div style={{ display: 'flex', gap: '16px', maxWidth: '85%' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '2px', border: '1px solid var(--color-muted)', backgroundColor: 'var(--color-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '22px', color: 'var(--color-text)' }}>account_balance</span>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '2px',
+                    border: '1px solid var(--color-muted)',
+                    backgroundColor: 'var(--color-background)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Icons.accountBalance size={22} strokeWidth={2} />
                   </div>
-                  <div style={{ padding: '16px 20px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-muted)', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    padding: '16px 20px',
+                    backgroundColor: 'var(--color-background)',
+                    border: '1px solid var(--color-muted)',
+                    borderRadius: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
                     {[0, 1, 2].map(i => (
                       <div key={i} style={{
-                        width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-muted)',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-muted)',
                         animation: `bounce 1.4s ease-in-out ${i * 0.2}s infinite`,
                       }} />
                     ))}
-                    <style>{`@keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }`}</style>
                   </div>
                 </div>
               )}
@@ -304,7 +340,7 @@ export default function CoachOralPage() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input area */}
+            {/* Input Area */}
             <div style={{ flexShrink: 0, padding: '20px 24px', borderTop: '1px solid var(--color-muted)', backgroundColor: 'var(--color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
                 <div style={{
@@ -312,7 +348,6 @@ export default function CoachOralPage() {
                   border: '1px solid var(--color-muted)',
                   borderRadius: '2px',
                   backgroundColor: 'var(--color-surface)',
-                  transition: 'border-color 0.15s',
                 }}>
                   <textarea
                     ref={textareaRef}
@@ -336,30 +371,28 @@ export default function CoachOralPage() {
                   />
                 </div>
 
-                {/* Mic button */}
+                {/* Microphone Button */}
                 <button
-                  aria-label="Microphone"
+                  onClick={toggleMicrophone}
                   style={{
                     width: '48px',
                     height: '48px',
-                    backgroundColor: 'var(--color-background)',
-                    border: '1px solid var(--color-muted)',
+                    backgroundColor: isListening ? 'var(--color-primary)' : 'var(--color-background)',
+                    border: `1px solid ${isListening ? 'var(--color-primary)' : 'var(--color-muted)'}`,
                     borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    color: 'var(--color-primary)',
+                    color: isListening ? 'white' : 'var(--color-primary)',
                     flexShrink: 0,
-                    transition: 'all 0.15s',
+                    transition: 'all 0.2s',
                   }}
-                  onMouseEnter={e => { ;(e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-primary)'; ;(e.currentTarget as HTMLElement).style.color = 'white' }}
-                  onMouseLeave={e => { ;(e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-background)'; ;(e.currentTarget as HTMLElement).style.color = 'var(--color-primary)' }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '26px', fontVariationSettings: "'FILL' 1" }}>mic</span>
+                  <Icons.mic size={26} strokeWidth={2} />
                 </button>
 
-                {/* Send button */}
+                {/* Send Button */}
                 <button
                   onClick={sendMessage}
                   disabled={loading || !input.trim()}
@@ -386,7 +419,7 @@ export default function CoachOralPage() {
               {/* Hints */}
               {hints && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', paddingLeft: '4px' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-muted)' }}>lightbulb</span>
+                  <Icons.lightbulb size={18} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />
                   <p style={{ fontSize: '13px', color: 'var(--color-muted)', fontWeight: 500 }}>
                     Vocabulaire suggéré : <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{hints}</span>
                   </p>
