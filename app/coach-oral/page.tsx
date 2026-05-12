@@ -23,8 +23,6 @@ export default function CoachOralPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-
-  
   useEffect(() => {
     // Initialize speech recognition
     if (typeof window !== 'undefined') {
@@ -60,8 +58,7 @@ export default function CoachOralPage() {
       }
     }
   }, [])
-  
-  
+
   useEffect(() => {
     if (!user || initialized) return
     initConversation()
@@ -166,6 +163,25 @@ export default function CoachOralPage() {
     setInitialized(false)
   }
 
+  const toggleMicrophone = () => {
+    if (!recognitionRef.current) {
+      alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Veuillez utiliser Chrome ou Edge.')
+      return
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (err) {
+        console.error('Error starting microphone:', err)
+      }
+    }
+  }
+  
   return (
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
