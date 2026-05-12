@@ -1,5 +1,9 @@
 import Link from 'next/link'
-import { Icons } from '@/components/layout/ui/icons'   // ← Important : chemin correct
+import { Icons } from '@/components/layout/ui/icons'   
+
+console.log("Icons object:", Icons);
+console.log("bookOpen exists?", !!Icons.bookOpen);
+console.log("library exists?", !!Icons.library);
 
 export default function Home() {
   return (
