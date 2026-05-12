@@ -63,7 +63,11 @@ export default function Bibliotheque() {
             }}>
               Bibliothèque
             </h2>
-            <p style={{ fontSize: '14px', color: 'var(--color-muted)', marginTop: '4px' }}>
+            <p style={{ 
+              fontSize: '14px', 
+              color: 'var(--color-muted)', 
+              marginTop: '4px' 
+            }}>
               Consultez et accédez à tous les modules du curriculum.
             </p>
           </div>
@@ -143,11 +147,7 @@ export default function Bibliotheque() {
             padding: '80px 40px', 
             color: 'var(--color-muted)' 
           }}>
-            <Icons.search 
-              size={48} 
-              strokeWidth={1.5} 
-              style={{ display: 'block', margin: '0 auto 16px', opacity: 0.6 }} 
-            />
+            <Icons.search size={48} strokeWidth={1.5} style={{ display: 'block', margin: '0 auto 16px' }} />
             <p style={{ fontSize: '16px' }}>Aucun module trouvé.</p>
           </div>
         ) : (
