@@ -4,6 +4,7 @@ import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Module, UserModuleProgress } from '@/lib/supabase'
+import { Icons } from '@/components/ui/icons'
 
 const CATEGORIES = ['Grammaire', 'Vocabulaire', 'Culture', 'Méthodologie'] as const
 
@@ -47,7 +48,19 @@ export default function Bibliotheque() {
             <p style={{ fontSize:'14px', color:'var(--color-muted)', marginTop:'4px' }}>Consultez et accédez à tous les modules du curriculum.</p>
           </div>
           <div style={{ position:'relative', width:'320px' }}>
-            <span className="material-symbols-outlined" style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)', fontSize:'20px', color:'var(--color-muted)', pointerEvents:'none' }}>search</span>
+            <Icons.search 
+              size={20} 
+              style={{ 
+                position:'absolute', 
+                left:'12px', 
+                top:'50%', 
+                transform:'translateY(-50%)', 
+                color:'var(--color-muted)', 
+                pointerEvents:'none' 
+              }} 
+            />
+            
+            
             <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un module..." style={{ width:'100%', paddingLeft:'40px', paddingRight:'16px', paddingTop:'10px', paddingBottom:'10px', backgroundColor:'var(--color-background)', border:'1px solid var(--color-muted)', borderRadius:'2px', fontSize:'13px', color:'var(--color-text)', fontFamily:'var(--font-body)' }} />
           </div>
         </div>
@@ -66,7 +79,11 @@ export default function Bibliotheque() {
           </div>
         ) : filteredModules.length === 0 ? (
           <div style={{ textAlign:'center', padding:'80px 40px', color:'var(--color-muted)' }}>
-            <span className="material-symbols-outlined" style={{ fontSize:'48px', display:'block', marginBottom:'16px' }}>search_off</span>
+            <Icons.searchOff 
+              size={48} 
+              style={{ display:'block', marginBottom:'16px' }} 
+            />
+            
             <p style={{ fontSize:'16px' }}>Aucun module trouvé.</p>
           </div>
         ) : (
@@ -87,7 +104,7 @@ export default function Bibliotheque() {
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:'1px solid rgba(142,150,164,0.2)', paddingTop:'16px', marginTop:'auto' }}>
                     <span style={{ fontSize:'11px', fontWeight:600, letterSpacing:'0.1em', backgroundColor:'var(--color-background)', border:'1px solid rgba(142,150,164,0.3)', padding:'4px 8px' }}>{module.duree_minutes} MIN</span>
                     <span style={{ color:'var(--color-primary)', fontSize:'11px', fontWeight:700, letterSpacing:'0.1em', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
-                      Commencer <span className="material-symbols-outlined" style={{ fontSize:'18px' }}>arrow_forward</span>
+                      Commencer <Icons.arrowForward size={18} style={{ marginLeft: '4px' }} />
                     </span>
                   </div>
                 </article>
