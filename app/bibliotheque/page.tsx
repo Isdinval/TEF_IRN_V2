@@ -193,7 +193,7 @@ export default function Bibliotheque() {
                       width: '8px',
                       height: '8px',
                       borderRadius: '50%',
-                      backgroundColor: getStatusColor(module.id)
+                      backgroundColor: getStatusColor(String(module.id))
                     }} />
                   </div>
 
