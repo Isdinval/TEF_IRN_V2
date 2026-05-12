@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 
+import { 
+  CheckCircle, Search, ArrowRight, Edit, Play, ArrowLeft, Info, Save, 
+  Scissors, Send, Scale, Mic, RefreshCw, Lightbulb, ChevronRight, 
+  X, AlertTriangle, TrendingUp, ClipboardList, Pencil 
+} from 'lucide-react'
+
+
 export const metadata: Metadata = {
   title: "L'Académie Moderne — Préparation TEF IRN",
   description: "Plateforme institutionnelle de préparation au TEF IRN",
