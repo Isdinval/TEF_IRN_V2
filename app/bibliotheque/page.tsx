@@ -4,7 +4,7 @@ import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Module, UserModuleProgress } from '@/lib/supabase'
-import { Icons } from '@/components/ui/icons'   // ← Import ajouté
+import { Icons } from '@/components/layout/ui/icons'   // ← Import ajouté
 
 const CATEGORIES = ['Grammaire', 'Vocabulaire', 'Culture', 'Méthodologie'] as const
 
