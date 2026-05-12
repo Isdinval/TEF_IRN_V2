@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Icons } from '@/components/layout/ui/icons'   // ← Ajuste le chemin si nécessaire
+import { Icons } from '@/components/layout/ui/icons'   // ← Important : chemin correct
 
 export default function Home() {
   return (
