@@ -4,6 +4,7 @@ import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Competences } from '@/lib/supabase'
+import { calculateNiveauEstime } from '@/lib/niveau-utils'
 
 const AXES = [
   { key: 'lexique', label: 'Lexique' },
@@ -78,6 +79,7 @@ export default function RadarPage() {
     fluidite: 65,
   })
   const [loading, setLoading] = useState(true)
+  const [niveauEstime, setNiveauEstime] = useState<string>('B1')
   const [progression, setProgression] = useState('+15%')
 
   useEffect(() => {
@@ -156,7 +158,7 @@ export default function RadarPage() {
                   Profil Évalué
                 </div>
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', color: 'var(--color-text)' }}>
-                  Niveau Actuel Estimé : B1
+                  Niveau Actuel Estimé : {niveauEstime}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>

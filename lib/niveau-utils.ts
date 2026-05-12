@@ -4,22 +4,24 @@
  * @param competences - Objet contenant les scores des 6 compétences (0-100)
  * @param exerciceResults - Tableau des résultats d'exercices (optionnel)
  * @param corrections - Tableau des corrections avec niveau_cefr (optionnel)
+ * @param oralConversations - Tableau des conversations orales avec feedback (optionnel)
  * @returns Niveau CECRL estimé (A1, A2, B1, B2)
  */
 export function calculateNiveauEstime(
   competences: { lexique: number; syntaxe: number; cohesion: number; orthographe: number; comprehension: number; fluidite: number } | null,
   exerciceResults?: { reponse_correcte: boolean }[],
-  corrections?: { niveau_cefr: string }[]
+  corrections?: { niveau_cefr: string }[],
+  oralConversations?: { messages: any[] }[]
 ): string {
   // Si aucune donnée, retourner A2 par défaut
-  if (!competences && (!exerciceResults || exerciceResults.length === 0) && (!corrections || corrections.length === 0)) {
+  if (!competences && (!exerciceResults || exerciceResults.length === 0) && (!corrections || corrections.length === 0) && (!oralConversations || oralConversations.length === 0)) {
     return 'A2'
   }
 
   let totalScore = 0
   let weightCount = 0
 
-  // 1. Score basé sur les compétences (poids: 50%)
+  // 1. Score basé sur les compétences (poids: 40%)
   if (competences) {
     const avgCompetences = (
       competences.lexique +
@@ -33,19 +35,19 @@ export function calculateNiveauEstime(
     // Convertir la moyenne (0-100) en score CECRL
     // A1: 0-25, A2: 25-50, B1: 50-75, B2: 75-100
     const competenceScore = avgCompetences
-    totalScore += competenceScore * 0.5
-    weightCount += 0.5
+    totalScore += competenceScore * 0.4
+    weightCount += 0.4
   }
 
-  // 2. Score basé sur les exercices Voltaire (poids: 25%)
+  // 2. Score basé sur les exercices Voltaire (poids: 20%)
   if (exerciceResults && exerciceResults.length > 0) {
     const correctCount = exerciceResults.filter(r => r.reponse_correcte).length
     const exercicePct = (correctCount / exerciceResults.length) * 100
-    totalScore += exercicePct * 0.25
-    weightCount += 0.25
+    totalScore += exercicePct * 0.2
+    weightCount += 0.2
   }
 
-  // 3. Score basé sur les corrections d'expression écrite (poids: 25%)
+  // 3. Score basé sur les corrections d'expression écrite (poids: 20%)
   if (corrections && corrections.length > 0) {
     const cecrlScores: Record<string, number> = { 'A1': 25, 'A2': 50, 'B1': 75, 'B2': 100 }
     let totalCecrl = 0
@@ -53,8 +55,39 @@ export function calculateNiveauEstime(
       totalCecrl += cecrlScores[c.niveau_cefr] || 50 // default A2 si inconnu
     })
     const avgCecrl = totalCecrl / corrections.length
-    totalScore += avgCecrl * 0.25
-    weightCount += 0.25
+    totalScore += avgCecrl * 0.2
+    weightCount += 0.2
+  }
+
+  // 4. Score basé sur les conversations orales (poids: 20%)
+  if (oralConversations && oralConversations.length > 0) {
+    // Estimer le niveau oral basé sur le nombre de messages échangés et la longueur
+    // Plus l'utilisateur participe activement, plus le score est élevé
+    let oralScore = 0
+    let conversationCount = 0
+
+    oralConversations.forEach(conv => {
+      if (conv.messages && conv.messages.length > 0) {
+        const userMessages = conv.messages.filter((m: any) => m.role === 'user')
+        const messageCount = userMessages.length
+
+        // Score basé sur la participation (nombre de messages utilisateur)
+        // 1-2 messages: 25 (A1), 3-5 messages: 50 (A2), 6-10 messages: 75 (B1), 11+: 100 (B2)
+        let convScore = 25
+        if (messageCount >= 11) convScore = 100
+        else if (messageCount >= 6) convScore = 75
+        else if (messageCount >= 3) convScore = 50
+
+        oralScore += convScore
+        conversationCount++
+      }
+    })
+
+    if (conversationCount > 0) {
+      const avgOralScore = oralScore / conversationCount
+      totalScore += avgOralScore * 0.2
+      weightCount += 0.2
+    }
   }
 
   // Normaliser le score si tous les poids ne sont pas utilisés

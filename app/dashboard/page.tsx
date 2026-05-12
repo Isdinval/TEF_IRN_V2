@@ -4,6 +4,7 @@ import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { calculateNiveauEstime } from '@/lib/niveau-utils'
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
@@ -16,10 +17,13 @@ export default function Dashboard() {
 
   const loadDashboard = async () => {
     if (!user) return
-    const [{ data: progressData }, { data: soumissionsData }, { data: allModules }] = await Promise.all([
+    const [{ data: progressData }, { data: soumissionsData }, { data: allModules }, { data: exerciceResults }, { data: conversationsData }, { data: competencesData }] = await Promise.all([
       supabase.from('user_module_progress').select('*, modules(*)').eq('user_id', user.id),
       supabase.from('soumissions').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
       supabase.from('modules').select('*').order('ordre', { ascending: true }),
+      supabase.from('user_exercice_results').select('reponse_correcte').eq('user_id', user.id),
+      supabase.from('conversations_coach').select('messages').eq('user_id', user.id).eq('statut', 'termine'),
+      supabase.from('competences').select('*').eq('user_id', user.id).single(),
     ])
     const completedIds = new Set((progressData||[]).filter(p=>p.statut==='complete').map(p=>p.module_id))
     const nextMod = allModules?.find(m=>!completedIds.has(m.id)) || null
@@ -29,7 +33,20 @@ export default function Dashboard() {
     soumissionsData?.slice(0,2).forEach(s => acts.push({ id:s.id, titre:s.titre||'Expression Écrite', detail:`Expression Écrite • ${s.statut==='corrige'?'Corrigé':s.statut==='soumis'?'En attente':'Brouillon'}`, statut:s.statut, date:new Date(s.updated_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}), icon:s.statut==='corrige'?'task_alt':'edit_document' }))
     setActivities(acts.slice(0,5))
     const totalMots = (soumissionsData||[]).reduce((acc,s)=>acc+(s.mot_count||0),0)
-    setStats({ modulesTotal:allModules?.length||0, modulesCompletes:completedIds.size, motCount:totalMots, niveauEstime:profile?.niveau_estime||'A2', progression:Math.round((completedIds.size/Math.max(allModules?.length||1,1))*100) })
+    
+    // Calculer le niveau estimé basé sur les données
+    const corrections = soumissionsData?.filter(s => s.statut === 'corrige').map(s => ({
+      niveau_cefr: 'A2' // Sera mis à jour avec les vraies données de correction
+    })) || []
+    
+    const niveauCalcule = calculateNiveauEstime(
+      competencesData ? { lexique: competencesData.lexique, syntaxe: competencesData.syntaxe, cohesion: competencesData.cohesion, orthographe: competencesData.orthographe, comprehension: competencesData.comprehension, fluidite: competencesData.fluidite } : null,
+      exerciceResults || undefined,
+      corrections.length > 0 ? corrections : undefined,
+      conversationsData || undefined
+    )
+    
+    setStats({ modulesTotal:allModules?.length||0, modulesCompletes:completedIds.size, motCount:totalMots, niveauEstime:niveauCalcule, progression:Math.round((completedIds.size/Math.max(allModules?.length||1,1))*100) })
     setLoading(false)
   }
 
