@@ -2,13 +2,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-  --color-primary: #0033CC;
-  --color-background: #F9F8F6;
+  --color-primary: #5B21B6;        /* Violet principal (indigo-violet profond) */
+  --color-background: #F8F7FC;     /* Fond légèrement teinté violet très clair */
   --color-surface: #FFFFFF;
-  --color-text: #0B132B;
-  --color-muted: #8E96A4;
-  --color-accent: #D92A2A;
-  --color-hover-blue: #F0F4FF;
+  --color-text: #0F172A;           /* Texte plus neutre et moderne */
+  --color-muted: #64748B;
+  --color-accent: #C026D3;         /* Accent magenta-violet vif */
+  --color-hover-blue: #F3E8FF;     /* Hover violet très clair (remplace l'ancien bleu) */
   --font-heading: 'EB Garamond', serif;
   --font-body: 'Albert Sans', sans-serif;
   --nav-width: 250px;
