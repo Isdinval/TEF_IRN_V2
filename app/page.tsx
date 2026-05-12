@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Icons } from '@/components/layout/ui/icons'   // ← Ajuste le chemin si nécessaire
 
 export default function Home() {
   return (
@@ -8,8 +9,8 @@ export default function Home() {
         <h1 className="text-2xl font-heading font-semibold text-[var(--color-text)]">
           L'Académie Moderne
         </h1>
-        <Link 
-          href="/auth" 
+        <Link
+          href="/auth"
           className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
         >
           Accéder à l'espace membre
@@ -25,19 +26,19 @@ export default function Home() {
               <span className="block text-[var(--color-primary)]">d'excellence</span>
             </h2>
             <p className="text-xl text-[var(--color-muted)] mb-8 leading-relaxed">
-              Plateforme institutionnelle de préparation au TEF IRN. 
-              Accédez à des exercices corrigés, des simulations d'oral, 
+              Plateforme institutionnelle de préparation au TEF IRN.
+              Accédez à des exercices corrigés, des simulations d'oral,
               et un suivi personnalisé par nos coachs experts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link 
-                href="/auth" 
+              <Link
+                href="/auth"
                 className="px-8 py-4 bg-[var(--color-primary)] text-white rounded-lg font-medium text-lg hover:opacity-90 transition-opacity text-center"
               >
                 Commencer gratuitement
               </Link>
-              <Link 
-                href="#features" 
+              <Link
+                href="#features"
                 className="px-8 py-4 border-2 border-[var(--color-primary)] text-[var(--color-primary)] rounded-lg font-medium text-lg hover:bg-[var(--color-hover-blue)] transition-colors text-center"
               >
                 Découvrir les fonctionnalités
@@ -50,7 +51,7 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">menu_book</span>
+                    <Icons.bookOpen className="w-7 h-7 text-[var(--color-primary)]" />
                   </div>
                   <div>
                     <h3 className="font-heading text-xl font-semibold">Leçons structurées</h3>
@@ -60,7 +61,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">mic</span>
+                    <Icons.mic className="w-7 h-7 text-[var(--color-primary)]" />
                   </div>
                   <div>
                     <h3 className="font-heading text-xl font-semibold">Coach Oral IA</h3>
@@ -70,7 +71,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">trending_up</span>
+                    <Icons.trendingUp className="w-7 h-7 text-[var(--color-primary)]" />
                   </div>
                   <div>
                     <h3 className="font-heading text-xl font-semibold">Suivi personnalisé</h3>
@@ -92,11 +93,11 @@ export default function Home() {
               Une suite complète d'outils conçus par des experts de la langue française
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">library_books</span>
+                <Icons.library className="w-8 h-8 text-[var(--color-primary)]" />
               </div>
               <h4 className="text-2xl font-heading font-semibold mb-3">Bibliothèque</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
@@ -106,7 +107,7 @@ export default function Home() {
 
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">record_voice_over</span>
+                <Icons.mic className="w-8 h-8 text-[var(--color-primary)]" />
               </div>
               <h4 className="text-2xl font-heading font-semibold mb-3">Coach Oral IA</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
@@ -116,7 +117,7 @@ export default function Home() {
 
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">fact_check</span>
+                <Icons.checkCircle className="w-8 h-8 text-[var(--color-primary)]" />
               </div>
               <h4 className="text-2xl font-heading font-semibold mb-3">Exercices & Corrections</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
@@ -135,8 +136,8 @@ export default function Home() {
             <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
               Rejoignez L'Académie Moderne et préparez votre TEF IRN dans les meilleures conditions.
             </p>
-            <Link 
-              href="/auth" 
+            <Link
+              href="/auth"
               className="inline-block px-10 py-5 bg-white text-[var(--color-primary)] rounded-lg font-medium text-lg hover:bg-[var(--color-hover-blue)] transition-colors"
             >
               Créer mon compte gratuit
