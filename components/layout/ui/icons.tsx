@@ -1,4 +1,3 @@
-'use client'
 import { 
   CheckCircle, Search, ArrowRight, Edit, Play, ArrowLeft, Info, Save,
   Scissors, Send, Scale, Mic, RefreshCw, Lightbulb, ChevronRight,
