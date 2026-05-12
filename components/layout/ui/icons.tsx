@@ -2,14 +2,12 @@
 import { 
   CheckCircle, Search, ArrowRight, Edit, Play, ArrowLeft, Info, Save,
   Scissors, Send, Scale, Mic, RefreshCw, Lightbulb, ChevronRight,
-  X, AlertTriangle, TrendingUp, ClipboardList, Pencil, Upload, User, BookOpen, Library
+  X, AlertTriangle, TrendingUp, ClipboardList, Pencil, Upload, User, BookOpen, Library,
 } from 'lucide-react'
 
 export const Icons = {
   taskAlt: CheckCircle,
   search: Search,
-  bookOpen: BookOpen,
-  library: Library,
   arrowForward: ArrowRight,
   edit: Pencil,           // ou Edit
   play: Play,
@@ -29,4 +27,6 @@ export const Icons = {
   trendingUp: TrendingUp,
   assignment: ClipboardList,
   user: User,
+  bookOpen: BookOpen,
+  library: Library,
 } as const
