@@ -44,30 +44,33 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
           <div className="relative">
             <div className="bg-[var(--color-surface)] rounded-2xl shadow-2xl p-8 border border-[var(--color-muted)]/20">
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[var(--color-primary)]">school</span>
+                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">menu_book</span>
                   </div>
                   <div>
                     <h3 className="font-heading text-xl font-semibold">Leçons structurées</h3>
                     <p className="text-[var(--color-muted)]">Contenu pédagogique complet</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[var(--color-primary)]">mic</span>
+                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">mic</span>
                   </div>
                   <div>
-                    <h3 className="font-heading text-xl font-semibold">Coach oral IA</h3>
-                    <p className="text-[var(--color-muted)]">Entraînement avec feedback</p>
+                    <h3 className="font-heading text-xl font-semibold">Coach Oral IA</h3>
+                    <p className="text-[var(--color-muted)]">Entraînement avec feedback instantané</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[var(--color-primary)]">analytics</span>
+                    <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">trending_up</span>
                   </div>
                   <div>
                     <h3 className="font-heading text-xl font-semibold">Suivi personnalisé</h3>
@@ -93,7 +96,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">menu_book</span>
+                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">library_books</span>
               </div>
               <h4 className="text-2xl font-heading font-semibold mb-3">Bibliothèque</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
@@ -103,9 +106,9 @@ export default function Home() {
 
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">record_voice_over</span>
+                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">record_voice_over</span>
               </div>
-              <h4 className="text-2xl font-heading font-semibold mb-3">Coach Oral</h4>
+              <h4 className="text-2xl font-heading font-semibold mb-3">Coach Oral IA</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
                 Entraînez-vous à l'expression orale avec notre coach IA qui vous donne des feedbacks instantanés.
               </p>
@@ -113,11 +116,11 @@ export default function Home() {
 
             <div className="bg-[var(--color-surface)] p-8 rounded-xl border border-[var(--color-muted)]/20 hover:shadow-lg transition-shadow">
               <div className="w-14 h-14 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">edit_note</span>
+                <span className="material-symbols-outlined text-4xl text-[var(--color-primary)]">fact_check</span>
               </div>
               <h4 className="text-2xl font-heading font-semibold mb-3">Exercices & Corrections</h4>
               <p className="text-[var(--color-muted)] leading-relaxed">
-                Pratiquez avec des exercices interactifs et recevez des corrections détaillées.
+                Pratiquez avec des exercices interactifs et recevez des corrections détaillées par nos experts.
               </p>
             </div>
           </div>
