@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Competences } from '@/lib/supabase'
 import { calculateNiveauEstime } from '@/lib/niveau-utils'
+import { Icons } from '@/components/layout/ui/icons'
 
 const AXES = [
   { key: 'lexique', label: 'Lexique' },
@@ -225,6 +226,7 @@ export default function RadarPage() {
                   let anchor: 'middle' | 'start' | 'end' = 'middle'
                   if (pt.x < CX - 10) anchor = 'end'
                   else if (pt.x > CX + 10) anchor = 'start'
+
                   return (
                     <text
                       key={i}
@@ -276,15 +278,14 @@ export default function RadarPage() {
                 {insight.accent && (
                   <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: 'var(--color-accent)' }} />
                 )}
+
                 <div style={{ paddingLeft: insight.accent ? '12px' : '0', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <span className="material-symbols-outlined" style={{
-                    fontSize: '22px',
-                    color: insight.accent ? 'var(--color-accent)' : 'var(--color-muted)',
-                    flexShrink: 0,
-                    marginTop: '2px',
-                  }}>
-                    {insight.type === 'warning' ? 'warning' : insight.type === 'positive' ? 'trending_up' : 'assignment'}
+                  <span style={{ flexShrink: 0, marginTop: '2px' }}>
+                    {insight.type === 'warning' && <Icons.warning size={22} strokeWidth={2} style={{ color: 'var(--color-accent)' }} />}
+                    {insight.type === 'positive' && <Icons.trendingUp size={22} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />}
+                    {insight.type === 'action' && <Icons.assignment size={22} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />}
                   </span>
+
                   <div>
                     <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text)', marginBottom: '6px' }}>
                       {insight.titre}
