@@ -72,24 +72,26 @@ export default function Bibliotheque() {
         ) : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'24px' }}>
             {filteredModules.map(module => (
-              <article key={module.id}
-                style={{ backgroundColor:'var(--color-surface)', border:'1px solid rgba(142,150,164,0.4)', borderRadius:'2px', padding:'24px', display:'flex', flexDirection:'column', cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e=>{ (e.currentTarget as HTMLElement).style.backgroundColor='var(--color-hover-blue)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(0,51,204,0.4)' }}
-                onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.backgroundColor='var(--color-surface)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(142,150,164,0.4)' }}
-              >
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px' }}>
-                  <span style={{ fontSize:'11px', fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--color-muted)' }}>{module.chapitre}</span>
-                  <div style={{ width:'8px', height:'8px', borderRadius:'50%', backgroundColor:getStatusColor(module.id) }} />
-                </div>
-                <h3 style={{ fontFamily:'var(--font-heading)', fontSize:'22px', fontWeight:500, color:'var(--color-text)', lineHeight:1.3, marginBottom:'10px', flex:1 }}>{module.titre}</h3>
-                {module.description && <p style={{ fontSize:'13px', color:'var(--color-muted)', lineHeight:1.6, marginBottom:'16px', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' } as React.CSSProperties}>{module.description}</p>}
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:'1px solid rgba(142,150,164,0.2)', paddingTop:'16px', marginTop:'auto' }}>
-                  <span style={{ fontSize:'11px', fontWeight:600, letterSpacing:'0.1em', backgroundColor:'var(--color-background)', border:'1px solid rgba(142,150,164,0.3)', padding:'4px 8px' }}>{module.duree_minutes} MIN</span>
-                  <Link href="/ecriture" style={{ color:'var(--color-primary)', fontSize:'11px', fontWeight:700, letterSpacing:'0.1em', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
-                    Commencer <span className="material-symbols-outlined" style={{ fontSize:'18px' }}>arrow_forward</span>
-                  </Link>
-                </div>
-              </article>
+              <Link href={`/lecon/${module.id}`} key={module.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <article
+                  style={{ backgroundColor:'var(--color-surface)', border:'1px solid rgba(142,150,164,0.4)', borderRadius:'2px', padding:'24px', display:'flex', flexDirection:'column', cursor:'pointer', transition:'all 0.15s' }}
+                  onMouseEnter={e=>{ (e.currentTarget as HTMLElement).style.backgroundColor='var(--color-hover-blue)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(0,51,204,0.4)' }}
+                  onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.backgroundColor='var(--color-surface)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(142,150,164,0.4)' }}
+                >
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px' }}>
+                    <span style={{ fontSize:'11px', fontWeight:600, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--color-muted)' }}>{module.chapitre}</span>
+                    <div style={{ width:'8px', height:'8px', borderRadius:'50%', backgroundColor:getStatusColor(module.id) }} />
+                  </div>
+                  <h3 style={{ fontFamily:'var(--font-heading)', fontSize:'22px', fontWeight:500, color:'var(--color-text)', lineHeight:1.3, marginBottom:'10px', flex:1 }}>{module.titre}</h3>
+                  {module.description && <p style={{ fontSize:'13px', color:'var(--color-muted)', lineHeight:1.6, marginBottom:'16px', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' } as React.CSSProperties}>{module.description}</p>}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', borderTop:'1px solid rgba(142,150,164,0.2)', paddingTop:'16px', marginTop:'auto' }}>
+                    <span style={{ fontSize:'11px', fontWeight:600, letterSpacing:'0.1em', backgroundColor:'var(--color-background)', border:'1px solid rgba(142,150,164,0.3)', padding:'4px 8px' }}>{module.duree_minutes} MIN</span>
+                    <span style={{ color:'var(--color-primary)', fontSize:'11px', fontWeight:700, letterSpacing:'0.1em', textDecoration:'none', display:'flex', alignItems:'center', gap:'4px' }}>
+                      Commencer <span className="material-symbols-outlined" style={{ fontSize:'18px' }}>arrow_forward</span>
+                    </span>
+                  </div>
+                </article>
+              </Link>
             ))}
           </div>
         )}
