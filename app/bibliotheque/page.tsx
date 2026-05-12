@@ -174,7 +174,7 @@ export default function Bibliotheque() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {filteredModules.map(module => (
               <Link
-                href={`/bibliotheque/${module.id}`}   // ← Mis à jour
+                href={`/lecon/${module.id}`}   // ← Mis à jour
                 key={module.id}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
