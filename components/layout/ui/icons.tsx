@@ -2,7 +2,7 @@
 import { 
   CheckCircle, Search, ArrowRight, Edit, Play, ArrowLeft, Info, Save,
   Scissors, Send, Scale, Mic, RefreshCw, Lightbulb, ChevronRight,
-  X, AlertTriangle, TrendingUp, ClipboardList, Pencil, Upload
+  X, AlertTriangle, TrendingUp, ClipboardList, Pencil, Upload, User,
 } from 'lucide-react'
 
 export const Icons = {
@@ -26,4 +26,5 @@ export const Icons = {
   warning: AlertTriangle,
   trendingUp: TrendingUp,
   assignment: ClipboardList,
+  user: User,
 } as const
