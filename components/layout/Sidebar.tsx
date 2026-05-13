@@ -30,6 +30,7 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { profile, signOut } = useAuth()
+  const { level } = useUserLevel()
 
   const handleSignOut = async () => {
     await signOut()
@@ -39,8 +40,6 @@ export default function Sidebar() {
   const initials = profile?.full_name 
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) 
     : 'JD'
-
-  const { level } = useUserLevel()
 
   return (
     <aside 
@@ -138,7 +137,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Profil + Déconnexion */}
+      {/* Profil + Niveau + Déconnexion */}
       <div style={{ padding: '16px', borderTop: '1px solid var(--color-muted)' }}>
         <div style={{ 
           display: 'flex', 
@@ -176,11 +175,10 @@ export default function Sidebar() {
             </div>
             <div style={{ 
               fontSize: '11px', 
-              color: 'var(--color-muted)' 
+              color: 'var(--color-primary)',
+              fontWeight: 600
             }}>
-              <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
-                Niveau estimé : {level?.global_level || profile?.niveau_estime || 'A2'}
-              </div>
+              Niveau estimé : {level?.global_level || profile?.niveau_estime || 'A2'}
             </div>
           </div>
 
