@@ -1,7 +1,7 @@
 // app/ecriture/EcritureClient.tsx
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
@@ -25,7 +25,6 @@ function countWords(text: string): number {
 export default function EcritureClient() {
   const { user } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [prompts, setPrompts] = useState<EcriturePrompt[]>([])
   const [currentPrompt, setCurrentPrompt] = useState<EcriturePrompt | null>(null)
@@ -38,13 +37,11 @@ export default function EcritureClient() {
 
   const motCount = countWords(texte)
 
-  // Charger les prompts
+  // Charger tous les prompts
   useEffect(() => {
     const loadPrompts = async () => {
       setLoading(true)
       setError(null)
-
-      console.log("🔄 Chargement des prompts d'écriture...")
 
       const { data, error: supabaseError } = await supabase
         .from('ecriture_prompts')
@@ -52,32 +49,22 @@ export default function EcritureClient() {
         .order('ordre', { ascending: true })
 
       if (supabaseError) {
-        console.error("❌ Erreur Supabase:", supabaseError)
+        console.error("Erreur Supabase:", supabaseError)
         setError(supabaseError.message)
-      } else if (data) {
-        console.log(`✅ ${data.length} prompts chargés`, data)
+      } else if (data && data.length > 0) {
         setPrompts(data)
-
-        if (data.length > 0) {
-          const promptId = searchParams.get('id')
-          let selected = data[0]
-
-          if (promptId) {
-            const found = data.find(p => p.id === promptId)
-            if (found) selected = found
-          }
-          setCurrentPrompt(selected)
-        } else {
-          setError("Aucun sujet trouvé dans la table ecriture_prompts")
-        }
+        // Première recommandation (aléatoire pour l'instant)
+        setCurrentPrompt(data[Math.floor(Math.random() * data.length)])
+      } else {
+        setError("Aucun sujet d'écriture disponible.")
       }
       setLoading(false)
     }
 
     loadPrompts()
-  }, [searchParams])
+  }, [])
 
-  // Sauvegarde automatique du brouillon
+  // Sauvegarde brouillon
   const saveDraft = useCallback(async () => {
     if (!user || !currentPrompt || texte.length < 10) return
 
@@ -98,14 +85,12 @@ export default function EcritureClient() {
         .insert(data)
         .select()
         .single()
-      
       if (newSoum) setSoumissionId(newSoum.id)
     }
 
     setLastSaved(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
   }, [texte, user, soumissionId, motCount, currentPrompt])
 
-  // Auto-save toutes les 30 secondes
   useEffect(() => {
     if (!user || !currentPrompt) return
     const interval = setInterval(saveDraft, 30000)
@@ -142,47 +127,26 @@ export default function EcritureClient() {
     setSubmitting(false)
   }
 
-  const changePrompt = (newPrompt: EcriturePrompt) => {
-    if (newPrompt.id === currentPrompt?.id) return
-    setCurrentPrompt(newPrompt)
+  // Changer de sujet
+  const changePrompt = () => {
+    if (prompts.length <= 1) return
+    const currentIndex = prompts.findIndex(p => p.id === currentPrompt?.id)
+    let newIndex = currentIndex
+
+    // Évite de retomber sur le même sujet
+    while (newIndex === currentIndex) {
+      newIndex = Math.floor(Math.random() * prompts.length)
+    }
+
+    setCurrentPrompt(prompts[newIndex])
     setTexte('')
     setSoumissionId(null)
   }
 
   // ==================== RENDU ====================
-  if (loading) {
-    return (
-      <AppLayout>
-        <div style={{ padding: '80px 40px', textAlign: 'center' }}>
-          Chargement des sujets d'écriture...
-        </div>
-      </AppLayout>
-    )
-  }
-
-  if (error) {
-    return (
-      <AppLayout>
-        <div style={{ padding: '80px 40px', textAlign: 'center', color: '#e11d48' }}>
-          <h2>Erreur de chargement</h2>
-          <p>{error}</p>
-          <p style={{ marginTop: '20px', fontSize: '14px' }}>
-            Vérifie que ta table <strong>ecriture_prompts</strong> contient bien 10 sujets.
-          </p>
-        </div>
-      </AppLayout>
-    )
-  }
-
-  if (!currentPrompt) {
-    return (
-      <AppLayout>
-        <div style={{ padding: '80px 40px', textAlign: 'center' }}>
-          Aucun sujet disponible.
-        </div>
-      </AppLayout>
-    )
-  }
+  if (loading) return <AppLayout><div style={{ padding: '80px', textAlign: 'center' }}>Chargement du sujet...</div></AppLayout>
+  if (error) return <AppLayout><div style={{ padding: '80px', textAlign: 'center', color: 'red' }}>{error}</div></AppLayout>
+  if (!currentPrompt) return <AppLayout><div>Aucun sujet disponible.</div></AppLayout>
 
   const motColor = motCount > currentPrompt.mots_max ? 'var(--color-accent)' : 'var(--color-text)'
 
@@ -190,40 +154,32 @@ export default function EcritureClient() {
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        {/* Header */}
+        {/* Header simplifié */}
         <header style={{ 
           padding: '12px 32px', 
           borderBottom: '1px solid var(--color-muted)', 
           backgroundColor: 'var(--color-surface)', 
-          flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: '16px'
+          justifyContent: 'space-between'
         }}>
           <button onClick={() => router.push('/bibliotheque')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             ← Retour
           </button>
 
-          <select 
-            value={currentPrompt.id}
-            onChange={(e) => {
-              const selected = prompts.find(p => p.id === e.target.value)
-              if (selected) changePrompt(selected)
-            }}
-            style={{ 
-              padding: '8px 12px', 
-              background: 'var(--color-background)', 
+          <button 
+            onClick={changePrompt}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'var(--color-background)',
               border: '1px solid var(--color-muted)',
               borderRadius: '4px',
+              cursor: 'pointer',
               fontSize: '14px'
             }}
           >
-            {prompts.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.section} — {p.titre}
-              </option>
-            ))}
-          </select>
+            🔄 Changer de sujet
+          </button>
         </header>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -314,7 +270,7 @@ export default function EcritureClient() {
                     cursor: submitting || motCount < 10 ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {submitting ? 'Envoi en cours...' : 'Soumettre pour correction'}
+                  {submitting ? 'Envoi...' : 'Soumettre pour correction'}
                 </button>
               </div>
             </div>
