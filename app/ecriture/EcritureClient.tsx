@@ -11,7 +11,6 @@ type EcriturePrompt = {
   titre: string
   section: string
   consigne: string
-  source?: string
   consignes: string[]
   mots_min: number
   mots_max: number
@@ -35,31 +34,42 @@ export default function EcritureClient() {
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const motCount = countWords(texte)
 
-  // Charger les prompts depuis Supabase
+  // Charger les prompts
   useEffect(() => {
     const loadPrompts = async () => {
       setLoading(true)
-      const { data, error } = await supabase
+      setError(null)
+
+      console.log("🔄 Chargement des prompts d'écriture...")
+
+      const { data, error: supabaseError } = await supabase
         .from('ecriture_prompts')
         .select('*')
         .order('ordre', { ascending: true })
 
-      if (error) {
-        console.error('Erreur chargement prompts:', error)
-      } else if (data && data.length > 0) {
+      if (supabaseError) {
+        console.error("❌ Erreur Supabase:", supabaseError)
+        setError(supabaseError.message)
+      } else if (data) {
+        console.log(`✅ ${data.length} prompts chargés`, data)
         setPrompts(data)
 
-        const promptId = searchParams.get('id')
-        let selected = data[0]
+        if (data.length > 0) {
+          const promptId = searchParams.get('id')
+          let selected = data[0]
 
-        if (promptId) {
-          const found = data.find(p => p.id === promptId)
-          if (found) selected = found
+          if (promptId) {
+            const found = data.find(p => p.id === promptId)
+            if (found) selected = found
+          }
+          setCurrentPrompt(selected)
+        } else {
+          setError("Aucun sujet trouvé dans la table ecriture_prompts")
         }
-        setCurrentPrompt(selected)
       }
       setLoading(false)
     }
@@ -67,6 +77,7 @@ export default function EcritureClient() {
     loadPrompts()
   }, [searchParams])
 
+  // Sauvegarde automatique du brouillon
   const saveDraft = useCallback(async () => {
     if (!user || !currentPrompt || texte.length < 10) return
 
@@ -138,10 +149,37 @@ export default function EcritureClient() {
     setSoumissionId(null)
   }
 
-  if (loading || !currentPrompt) {
+  // ==================== RENDU ====================
+  if (loading) {
     return (
       <AppLayout>
-        <div style={{ padding: '40px', textAlign: 'center' }}>Chargement des sujets...</div>
+        <div style={{ padding: '80px 40px', textAlign: 'center' }}>
+          Chargement des sujets d'écriture...
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div style={{ padding: '80px 40px', textAlign: 'center', color: '#e11d48' }}>
+          <h2>Erreur de chargement</h2>
+          <p>{error}</p>
+          <p style={{ marginTop: '20px', fontSize: '14px' }}>
+            Vérifie que ta table <strong>ecriture_prompts</strong> contient bien 10 sujets.
+          </p>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (!currentPrompt) {
+    return (
+      <AppLayout>
+        <div style={{ padding: '80px 40px', textAlign: 'center' }}>
+          Aucun sujet disponible.
+        </div>
       </AppLayout>
     )
   }
@@ -151,6 +189,7 @@ export default function EcritureClient() {
   return (
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        
         {/* Header */}
         <header style={{ 
           padding: '12px 32px', 
@@ -161,10 +200,7 @@ export default function EcritureClient() {
           alignItems: 'center',
           gap: '16px'
         }}>
-          <button 
-            onClick={() => router.push('/bibliotheque')} 
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}
-          >
+          <button onClick={() => router.push('/bibliotheque')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             ← Retour
           </button>
 
@@ -191,6 +227,7 @@ export default function EcritureClient() {
         </header>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          
           {/* Panneau Consigne */}
           <aside style={{ 
             width: '38%', 
@@ -254,7 +291,7 @@ export default function EcritureClient() {
               justifyContent: 'space-between' 
             }}>
               <div style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
-                Auto-sauvegarde toutes les 30 secondes {lastSaved && `— Dernier : ${lastSaved}`}
+                Auto-sauvegarde toutes les 30s {lastSaved && `— ${lastSaved}`}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
@@ -277,7 +314,7 @@ export default function EcritureClient() {
                     cursor: submitting || motCount < 10 ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {submitting ? 'Envoi...' : 'Soumettre pour correction'}
+                  {submitting ? 'Envoi en cours...' : 'Soumettre pour correction'}
                 </button>
               </div>
             </div>
