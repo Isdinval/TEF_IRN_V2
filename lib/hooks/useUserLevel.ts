@@ -13,6 +13,7 @@ export type UserLevel = {
   weaknesses: string[] | null
   last_updated: string
   total_exercices?: number
+  last_evaluation_date?: string
 }
 
 export function useUserLevel() {
@@ -21,22 +22,39 @@ export function useUserLevel() {
   const [loading, setLoading] = useState(true)
 
   const refreshLevel = useCallback(async () => {
-    if (!user) return
+    if (!user?.id) {
+      setLoading(false)
+      return
+    }
 
-    await supabase.rpc('calculate_user_level', { p_user_id: user.id })
+    try {
+      // Appel de la fonction SQL qui fait le calcul + UPSERT
+      await supabase.rpc('calculate_user_level', { 
+        p_user_id: user.id 
+      })
 
-    const { data, error } = await supabase
-      .from('user_level_evaluations')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
+      // Récupération des résultats
+      const { data, error } = await supabase
+        .from('user_level_evaluations')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
 
-    if (error && error.code !== 'PGRST116') console.error(error) // PGRST116 = no rows
-    if (data) setLevel(data)
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erreur lors de la récupération du niveau:', error)
+      }
 
-    setLoading(false)
+      if (data) {
+        setLevel(data)
+      }
+    } catch (err) {
+      console.error('Erreur refreshLevel:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
+  // Chargement initial
   useEffect(() => {
     refreshLevel()
   }, [refreshLevel])
