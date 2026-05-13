@@ -1,22 +1,22 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Icons } from '@/components/layout/ui/icons'
 
-const PROMPT = {
-  titre: 'Section A: Faits Divers',
-  section: 'SECTION A',
-  consigne: "Vous avez été témoin d'un incident dans une gare. Rédigez une lettre formelle au directeur de la gare pour décrire la situation et demander des améliorations. (200 mots environ)",
-  source: "Rédigez une lettre formelle en respectant les conventions épistolaires : formule d'appel, développement structuré, formule de politesse. Utilisez le passé composé et l'imparfait pour le récit.",
-  consignes: [
-    "Temps recommandés : Passé composé, imparfait.",
-    "Respectez la structure de la lettre formelle.",
-    "Inclinez le récit vers une résolution proposée."
-  ],
-  motsMax: 220,
+type EcriturePrompt = {
+  id: string
+  titre: string
+  section: string
+  consigne: string
+  source?: string
+  consignes: string[]
+  mots_min: number
+  mots_max: number
+  type: string
+  ordre: number
 }
 
 function countWords(text: string): number {
@@ -26,57 +26,102 @@ function countWords(text: string): number {
 export default function EcriturePage() {
   const { user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [prompts, setPrompts] = useState<EcriturePrompt[]>([])
+  const [currentPrompt, setCurrentPrompt] = useState<EcriturePrompt | null>(null)
   const [texte, setTexte] = useState('')
   const [soumissionId, setSoumissionId] = useState<string | null>(null)
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const motCount = countWords(texte)
 
+  // Charger les prompts depuis Supabase
+  useEffect(() => {
+    const loadPrompts = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('ecriture_prompts')
+        .select('*')
+        .order('ordre', { ascending: true })
+
+      if (error) {
+        console.error('Erreur chargement prompts:', error)
+      } else if (data) {
+        setPrompts(data)
+
+        // Récupérer l'ID depuis l'URL ou prendre le premier
+        const promptId = searchParams.get('id')
+        let selected = data[0]
+
+        if (promptId) {
+          const found = data.find(p => p.id === promptId)
+          if (found) selected = found
+        }
+
+        setCurrentPrompt(selected)
+      }
+      setLoading(false)
+    }
+
+    loadPrompts()
+  }, [searchParams])
+
   const saveDraft = useCallback(async () => {
-    if (!user || texte.length < 10) return
+    if (!user || !currentPrompt || texte.length < 10) return
 
     const data = { 
       user_id: user.id, 
-      titre: PROMPT.titre, 
-      prompt_texte: PROMPT.consigne, 
+      titre: currentPrompt.titre, 
+      prompt_texte: currentPrompt.consigne, 
       texte_soumis: texte, 
       mot_count: motCount, 
-      statut: 'brouillon' as const, 
-      updated_at: new Date().toISOString() 
+      statut: 'brouillon' as const,
     }
 
     if (soumissionId) {
       await supabase.from('soumissions').update(data).eq('id', soumissionId)
     } else {
-      const { data: newSoum } = await supabase.from('soumissions').insert(data).select().single()
+      const { data: newSoum } = await supabase
+        .from('soumissions')
+        .insert(data)
+        .select()
+        .single()
+      
       if (newSoum) setSoumissionId(newSoum.id)
     }
 
     setLastSaved(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
-  }, [texte, user, soumissionId, motCount])
+  }, [texte, user, soumissionId, motCount, currentPrompt])
 
+  // Auto-save toutes les 30 secondes
   useEffect(() => {
-    if (!user || texte.length < 10) return
-    const interval = setInterval(() => saveDraft(), 30000)
+    if (!user || !currentPrompt) return
+    const interval = setInterval(saveDraft, 30000)
     return () => clearInterval(interval)
-  }, [texte, user, saveDraft])
+  }, [saveDraft, user, currentPrompt])
 
   const handleSubmit = async () => {
-    if (!user || motCount < 10) return
+    if (!user || !currentPrompt || motCount < 10) return
     setSubmitting(true)
 
     let id = soumissionId
     const data = { 
       texte_soumis: texte, 
       mot_count: motCount, 
-      statut: 'soumis' as const, 
-      updated_at: new Date().toISOString() 
+      statut: 'soumis' as const,
     }
 
     if (!id) {
       const { data: d } = await supabase.from('soumissions')
-        .insert({ user_id: user.id, titre: PROMPT.titre, prompt_texte: PROMPT.consigne, ...data })
+        .insert({ 
+          user_id: user.id, 
+          titre: currentPrompt.titre, 
+          prompt_texte: currentPrompt.consigne, 
+          ...data 
+        })
         .select()
         .single()
       id = d?.id
@@ -88,170 +133,119 @@ export default function EcriturePage() {
     setSubmitting(false)
   }
 
-  const motColor = motCount > PROMPT.motsMax ? 'var(--color-accent)' : 'var(--color-text)'
+  const changePrompt = (newPrompt: EcriturePrompt) => {
+    if (newPrompt.id === currentPrompt?.id) return
+    setCurrentPrompt(newPrompt)
+    setTexte('')           // On vide le texte quand on change de sujet
+    setSoumissionId(null)
+  }
+
+  if (loading || !currentPrompt) {
+    return (
+      <AppLayout>
+        <div style={{ padding: '40px', textAlign: 'center' }}>Chargement des sujets d'écriture...</div>
+      </AppLayout>
+    )
+  }
+
+  const motColor = motCount > currentPrompt.mots_max ? 'var(--color-accent)' : 'var(--color-text)'
 
   return (
     <AppLayout>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        {/* Header avec sélecteur de sujet */}
         <header style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
           padding: '12px 32px', 
           borderBottom: '1px solid var(--color-muted)', 
           backgroundColor: 'var(--color-surface)', 
-          flexShrink: 0 
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
         }}>
-          <button 
-            onClick={() => router.push('/bibliotheque')} 
+          <button onClick={() => router.push('/bibliotheque')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            ← Retour
+          </button>
+
+          <select 
+            value={currentPrompt.id}
+            onChange={(e) => {
+              const selected = prompts.find(p => p.id === e.target.value)
+              if (selected) changePrompt(selected)
+            }}
             style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              background: 'none', 
-              border: 'none', 
-              cursor: 'pointer', 
-              color: 'var(--color-text)', 
-              fontSize: '11px', 
-              fontWeight: 600, 
-              letterSpacing: '0.1em', 
-              textTransform: 'uppercase' 
+              padding: '8px 12px', 
+              background: 'var(--color-background)', 
+              border: '1px solid var(--color-muted)',
+              borderRadius: '4px',
+              fontSize: '14px'
             }}
           >
-            <Icons.arrowBack size={20} strokeWidth={2.5} />
-            Retour à la Bibliothèque
-          </button>
+            {prompts.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.section} — {p.titre}
+              </option>
+            ))}
+          </select>
         </header>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* Panneau de consigne */}
+          {/* Panneau Consigne (gauche) */}
           <aside style={{ 
-            width: '35%', 
+            width: '38%', 
             backgroundColor: 'var(--color-background)', 
             borderRight: '1px solid var(--color-muted)', 
             overflowY: 'auto', 
-            padding: '40px', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            flexShrink: 0 
+            padding: '40px' 
           }}>
-            <div style={{ 
-              fontSize: '11px', 
-              fontWeight: 600, 
-              letterSpacing: '0.15em', 
-              textTransform: 'uppercase', 
-              color: 'var(--color-muted)', 
-              marginBottom: '16px' 
-            }}>
-              {PROMPT.section}
+            <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '12px' }}>
+              {currentPrompt.section}
             </div>
 
-            <h2 style={{ 
-              fontFamily: 'var(--font-heading)', 
-              fontSize: '32px', 
-              fontWeight: 500, 
-              color: 'var(--color-text)', 
-              marginBottom: '24px' 
-            }}>
-              {PROMPT.titre}
+            <h2 style={{ fontSize: '28px', fontWeight: 500, marginBottom: '24px' }}>
+              {currentPrompt.titre}
             </h2>
 
-            <p style={{ 
-              fontSize: '14px', 
-              color: 'var(--color-text)', 
-              lineHeight: 1.7, 
-              marginBottom: '24px' 
-            }}>
-              {PROMPT.consigne}
+            <p style={{ fontSize: '15px', lineHeight: 1.7, marginBottom: '32px' }}>
+              {currentPrompt.consigne}
             </p>
 
-            <div style={{ 
-              backgroundColor: 'var(--color-surface)', 
-              border: '1px solid var(--color-muted)', 
-              padding: '20px', 
-              position: 'relative', 
-              borderRadius: '2px', 
-              marginBottom: '32px' 
-            }}>
-              <Icons.info 
-                size={20} 
-                strokeWidth={2} 
-                style={{ 
-                  position: 'absolute', 
-                  top: '-12px', 
-                  left: '-12px', 
-                  backgroundColor: 'var(--color-background)', 
-                  color: 'var(--color-muted)', 
-                  padding: '4px' 
-                }} 
-              />
-              <p style={{ 
-                fontFamily: 'var(--font-heading)', 
-                fontSize: '16px', 
-                fontStyle: 'italic', 
-                color: 'var(--color-text)', 
-                lineHeight: 1.6 
-              }}>
-                {PROMPT.source}
-              </p>
-            </div>
-
-            <div style={{ borderTop: '1px solid var(--color-muted)', paddingTop: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <Icons.info size={20} strokeWidth={2.5} style={{ color: 'var(--color-primary)', marginTop: '2px' }} />
-                <div>
-                  <p style={{ 
-                    fontSize: '14px', 
-                    fontWeight: 600, 
-                    color: 'var(--color-text)', 
-                    marginBottom: '8px' 
-                  }}>
-                    Consignes de l'examinateur:
-                  </p>
-                  <ul style={{ listStyle: 'disc', paddingLeft: '16px' }}>
-                    {PROMPT.consignes.map((c, i) => (
-                      <li key={i} style={{ 
-                        fontSize: '14px', 
-                        color: 'var(--color-muted)', 
-                        lineHeight: 1.6, 
-                        marginBottom: '4px' 
-                      }}>
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            {currentPrompt.source && (
+              <div style={{ backgroundColor: 'var(--color-surface)', padding: '20px', borderRadius: '2px', marginBottom: '32px' }}>
+                <p style={{ fontStyle: 'italic', color: 'var(--color-text)' }}>{currentPrompt.source}</p>
               </div>
+            )}
+
+            <div>
+              <p style={{ fontWeight: 600, marginBottom: '12px' }}>Consignes de l’examinateur :</p>
+              <ul style={{ paddingLeft: '20px', lineHeight: 1.6 }}>
+                {currentPrompt.consignes.map((c, i) => (
+                  <li key={i} style={{ marginBottom: '8px' }}>{c}</li>
+                ))}
+              </ul>
             </div>
           </aside>
 
           {/* Zone d'écriture */}
-          <section style={{ 
-            flex: 1, 
-            backgroundColor: 'var(--color-surface)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            overflow: 'hidden' 
-          }}>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '48px' }}>
-              <textarea 
-                autoFocus 
-                value={texte} 
-                onChange={e => setTexte(e.target.value)} 
-                placeholder="Commencez votre rédaction ici..." 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  minHeight: '400px', 
-                  resize: 'none', 
-                  border: 'none', 
-                  outline: 'none', 
-                  boxShadow: 'none', 
-                  fontSize: '18px', 
-                  lineHeight: 1.8, 
-                  color: 'var(--color-text)', 
-                  fontFamily: 'var(--font-body)', 
-                  backgroundColor: 'transparent' 
-                }} 
+          <section style={{ flex: 1, backgroundColor: 'var(--color-surface)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, padding: '48px', overflowY: 'auto' }}>
+              <textarea
+                autoFocus
+                value={texte}
+                onChange={e => setTexte(e.target.value)}
+                placeholder="Rédigez votre texte ici..."
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '500px',
+                  resize: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '17.5px',
+                  lineHeight: 1.75,
+                  background: 'transparent',
+                  fontFamily: 'var(--font-body)'
+                }}
               />
             </div>
 
@@ -262,60 +256,34 @@ export default function EcriturePage() {
               padding: '16px 32px', 
               display: 'flex', 
               alignItems: 'center', 
-              justifyContent: 'space-between', 
-              flexShrink: 0 
+              justifyContent: 'space-between' 
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-muted)' }}>
-                <Icons.save size={18} strokeWidth={2} />
-                {lastSaved ? `Brouillon enregistré à ${lastSaved}` : 'Non enregistré'}
-                <button 
-                  onClick={saveDraft} 
-                  style={{ 
-                    background: 'none', 
-                    border: 'none', 
-                    cursor: 'pointer', 
-                    color: 'var(--color-primary)', 
-                    fontSize: '11px', 
-                    fontWeight: 600, 
-                    letterSpacing: '0.1em', 
-                    textTransform: 'uppercase', 
-                    marginLeft: '8px' 
-                  }}
-                >
-                  Sauvegarder
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: 'var(--color-muted)' }}>
+                <Icons.save size={18} />
+                {lastSaved ? `Brouillon sauvegardé à ${lastSaved}` : 'Auto-sauvegarde toutes les 30s'}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Icons.textSnipper size={20} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: motColor }}>
-                    {motCount} / {PROMPT.motsMax} mots
-                  </span>
-                </div>
+                <span style={{ fontWeight: 500, color: motColor }}>
+                  {motCount} / {currentPrompt.mots_max} mots
+                </span>
 
                 <button 
-                  onClick={handleSubmit} 
-                  disabled={submitting || motCount < 10} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px', 
-                    backgroundColor: submitting || motCount < 10 ? 'var(--color-muted)' : 'var(--color-primary)', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '2px', 
-                    padding: '12px 24px', 
-                    fontSize: '11px', 
-                    fontWeight: 600, 
-                    letterSpacing: '0.15em', 
-                    textTransform: 'uppercase', 
-                    cursor: submitting || motCount < 10 ? 'not-allowed' : 'pointer', 
-                    fontFamily: 'var(--font-body)' 
+                  onClick={handleSubmit}
+                  disabled={submitting || motCount < 10}
+                  style={{
+                    padding: '12px 28px',
+                    backgroundColor: submitting || motCount < 10 ? 'var(--color-muted)' : 'var(--color-primary)',
+                    color: 'white',
+                    border: 'none',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    cursor: submitting || motCount < 10 ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {submitting ? 'Analyse...' : 'Soumettre'} 
-                  <Icons.submit size={18} strokeWidth={2.5} />
+                  {submitting ? 'Correction en cours...' : 'Soumettre pour correction'}
                 </button>
               </div>
             </div>
