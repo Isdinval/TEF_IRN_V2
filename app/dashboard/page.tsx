@@ -6,17 +6,53 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { calculateNiveauEstime } from '@/lib/niveau-utils'
 import { Icons } from '@/components/layout/ui/icons'
+import { useUserLevel } from '@/lib/hooks/useUserLevel'
+
+export type UserLevel = {
+  global_level: string
+  global_score: number
+  writing_score: number
+  voltaire_score: number
+  speaking_score: number
+  strengths: string[] | null
+  weaknesses: string[] | null
+  last_updated: string
+  total_exercices?: number
+}
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
-  const [stats, setStats] = useState<{modulesTotal:number;modulesCompletes:number;motCount:number;niveauEstime:string;progression:number}|null>(null)
-  const [activities, setActivities] = useState<{id:string;titre:string;detail:string;statut:string;date:string;icon:string}[]>([])
-  const [nextModule, setNextModule] = useState<{id:string;titre:string;categorie:string;duree_minutes:number}|null>(null)
+  const { level: userLevel, loading: levelLoading, refreshLevel } = useUserLevel()
+
+  const [stats, setStats] = useState<{
+    modulesTotal: number
+    modulesCompletes: number
+    motCount: number
+    niveauEstime: string
+    progression: number
+  } | null>(null)
+
+  const [activities, setActivities] = useState<{
+    id: string
+    titre: string
+    detail: string
+    statut: string
+    date: string
+    icon: string
+  }[]>([])
+
+  const [nextModule, setNextModule] = useState<{
+    id: string
+    titre: string
+    categorie: string
+    duree_minutes: number
+  } | null>(null)
+
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { 
-    if (!user) return; 
-    loadDashboard() 
+  useEffect(() => {
+    if (!user) return
+    loadDashboard()
   }, [user])
 
   const loadDashboard = async () => {
@@ -31,82 +67,82 @@ export default function Dashboard() {
       supabase.from('competences').select('*').eq('user_id', user.id).single(),
     ])
 
-    const completedIds = new Set((progressData||[]).filter(p=>p.statut==='complete').map(p=>p.module_id))
-    const nextMod = allModules?.find(m=>!completedIds.has(m.id)) || null
+    const completedIds = new Set((progressData || []).filter(p => p.statut === 'complete').map(p => p.module_id))
+    const nextMod = allModules?.find(m => !completedIds.has(m.id)) || null
     setNextModule(nextMod)
 
-    const acts: {id:string;titre:string;detail:string;statut:string;date:string;icon:string}[] = []
+    const acts: { id: string; titre: string; detail: string; statut: string; date: string; icon: string }[] = []
 
-    progressData?.slice(0,3).forEach(p => { 
-      if(p.modules) {
-        acts.push({ 
-          id: p.module_id, 
-          titre: p.modules.titre, 
-          detail: `${p.modules.categorie} • ${p.statut==='complete'?'Complété':'En cours'}`, 
-          statut: p.statut, 
-          date: new Date(p.created_at||Date.now()).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}), 
-          icon: p.statut==='complete' ? 'check_circle' : 'edit' 
-        }) 
+    progressData?.slice(0, 3).forEach(p => {
+      if (p.modules) {
+        acts.push({
+          id: p.module_id,
+          titre: p.modules.titre,
+          detail: `${p.modules.categorie} • ${p.statut === 'complete' ? 'Complété' : 'En cours'}`,
+          statut: p.statut,
+          date: new Date(p.created_at || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          icon: p.statut === 'complete' ? 'check_circle' : 'edit'
+        })
       }
     })
 
-    soumissionsData?.slice(0,2).forEach(s => {
-      acts.push({ 
-        id: s.id, 
-        titre: s.titre||'Expression Écrite', 
-        detail: `Expression Écrite • ${s.statut==='corrige'?'Corrigé':s.statut==='soumis'?'En attente':'Brouillon'}`, 
-        statut: s.statut, 
-        date: new Date(s.updated_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}), 
-        icon: s.statut==='corrige' ? 'task_alt' : 'edit' 
+    soumissionsData?.slice(0, 2).forEach(s => {
+      acts.push({
+        id: s.id,
+        titre: s.titre || 'Expression Écrite',
+        detail: `Expression Écrite • ${s.statut === 'corrige' ? 'Corrigé' : s.statut === 'soumis' ? 'En attente' : 'Brouillon'}`,
+        statut: s.statut,
+        date: new Date(s.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+        icon: s.statut === 'corrige' ? 'task_alt' : 'edit'
       })
     })
 
-    setActivities(acts.slice(0,5))
+    setActivities(acts.slice(0, 5))
 
-    const totalMots = (soumissionsData||[]).reduce((acc,s)=>acc+(s.mot_count||0),0)
+    const totalMots = (soumissionsData || []).reduce((acc, s) => acc + (s.mot_count || 0), 0)
 
     const corrections = soumissionsData?.filter(s => s.statut === 'corrige').map(s => ({
       niveau_cefr: 'A2'
     })) || []
 
     const niveauCalcule = calculateNiveauEstime(
-      competencesData ? { 
-        lexique: competencesData.lexique, 
-        syntaxe: competencesData.syntaxe, 
-        cohesion: competencesData.cohesion, 
-        orthographe: competencesData.orthographe, 
-        comprehension: competencesData.comprehension, 
-        fluidite: competencesData.fluidite 
+      competencesData ? {
+        lexique: competencesData.lexique,
+        syntaxe: competencesData.syntaxe,
+        cohesion: competencesData.cohesion,
+        orthographe: competencesData.orthographe,
+        comprehension: competencesData.comprehension,
+        fluidite: competencesData.fluidite
       } : null,
       exerciceResults || undefined,
       corrections.length > 0 ? corrections : undefined,
       conversationsData || undefined
     )
 
-    setStats({ 
-      modulesTotal: allModules?.length||0, 
-      modulesCompletes: completedIds.size, 
-      motCount: totalMots, 
-      niveauEstime: niveauCalcule, 
-      progression: Math.round((completedIds.size / Math.max(allModules?.length||1, 1)) * 100) 
+    setStats({
+      modulesTotal: allModules?.length || 0,
+      modulesCompletes: completedIds.size,
+      motCount: totalMots,
+      niveauEstime: niveauCalcule,
+      progression: Math.round((completedIds.size / Math.max(allModules?.length || 1, 1)) * 100)
     })
+
     setLoading(false)
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Candidat'
 
-  const S = { 
-    fontSize: '11px', 
-    fontWeight: 600, 
-    letterSpacing: '0.15em', 
-    textTransform: 'uppercase' as const, 
-    color: 'var(--color-muted)', 
-    marginBottom: '16px' 
+  const S = {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.15em',
+    textTransform: 'uppercase' as const,
+    color: 'var(--color-muted)',
+    marginBottom: '16px'
   }
 
-  // Mapping des icônes pour les activités
   const getActivityIcon = (iconName: string) => {
-    switch(iconName) {
+    switch (iconName) {
       case 'check_circle': return Icons.checkCircle
       case 'task_alt': return Icons.taskAlt
       case 'edit': return Icons.edit
@@ -133,15 +169,15 @@ export default function Dashboard() {
             {loading ? (
               <div className="skeleton" style={{ height: '140px', borderRadius: '2px' }} />
             ) : nextModule ? (
-              <div style={{ 
-                backgroundColor: 'var(--color-surface)', 
-                border: '1px solid var(--color-muted)', 
-                borderRadius: '2px', 
-                padding: '24px', 
-                display: 'flex', 
-                alignItems: 'flex-start', 
-                justifyContent: 'space-between', 
-                gap: '24px' 
+              <div style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-muted)',
+                borderRadius: '2px',
+                padding: '24px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: '24px'
               }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -155,19 +191,19 @@ export default function Dashboard() {
                   </h4>
                 </div>
                 <Link href="/bibliotheque">
-                  <button style={{ 
-                    backgroundColor: 'var(--color-primary)', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '2px', 
-                    padding: '12px 24px', 
-                    fontSize: '11px', 
-                    fontWeight: 600, 
-                    letterSpacing: '0.1em', 
-                    textTransform: 'uppercase', 
-                    cursor: 'pointer', 
-                    fontFamily: 'var(--font-body)', 
-                    flexShrink: 0 
+                  <button style={{
+                    backgroundColor: 'var(--color-primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '2px',
+                    padding: '12px 24px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    flexShrink: 0
                   }}>
                     Commencer
                   </button>
@@ -184,22 +220,22 @@ export default function Dashboard() {
           <section>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <h3 style={{ ...S, margin: 0 }}>Activité Récente</h3>
-              <Link href="/corrections" style={{ 
-                color: 'var(--color-primary)', 
-                fontSize: '13px', 
-                textDecoration: 'none', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '4px' 
+              <Link href="/corrections" style={{
+                color: 'var(--color-primary)',
+                fontSize: '13px',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
               }}>
-                Voir tout 
+                Voir tout
                 <Icons.arrowForward size={16} strokeWidth={2.5} />
               </Link>
             </div>
 
             <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-muted)', borderRadius: '2px' }}>
               {loading ? (
-                [1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '64px', margin: '1px 0' }} />)
+                [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '64px', margin: '1px 0' }} />)
               ) : activities.length === 0 ? (
                 <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-muted)', fontSize: '14px' }}>
                   Aucune activité. Commencez votre première évaluation.
@@ -208,23 +244,23 @@ export default function Dashboard() {
                 activities.map((act, i) => {
                   const IconComponent = getActivityIcon(act.icon)
                   return (
-                    <div key={act.id + i} style={{ 
-                      padding: '16px', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '16px', 
-                      borderBottom: i < activities.length - 1 ? '1px solid var(--color-muted)' : 'none' 
+                    <div key={act.id + i} style={{
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
+                      borderBottom: i < activities.length - 1 ? '1px solid var(--color-muted)' : 'none'
                     }}>
-                      <div style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        backgroundColor: 'var(--color-hover-blue)', 
-                        border: '1px solid var(--color-muted)', 
-                        borderRadius: '2px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        flexShrink: 0 
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: 'var(--color-hover-blue)',
+                        border: '1px solid var(--color-muted)',
+                        borderRadius: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}>
                         <IconComponent size={20} strokeWidth={2.5} style={{ color: 'var(--color-primary)' }} />
                       </div>
@@ -243,57 +279,80 @@ export default function Dashboard() {
 
         {/* Sidebar droite */}
         <aside style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {/* === NOUVELLE SECTION ÉVALUATION GLOBALE === */}
           <section>
             <h3 style={S}>Évaluation Globale</h3>
-            <div style={{ 
-              backgroundColor: 'var(--color-surface)', 
-              border: '1px solid var(--color-muted)', 
-              borderRadius: '2px', 
-              padding: '24px', 
-              textAlign: 'center', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              minHeight: '200px', 
-              justifyContent: 'center' 
+            <div style={{
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-muted)',
+              borderRadius: '2px',
+              padding: '32px',
+              textAlign: 'center'
             }}>
-              {loading ? (
-                <div className="skeleton" style={{ width: '80px', height: '64px', borderRadius: '2px' }} />
-              ) : (
+              {(loading || levelLoading) ? (
+                <div className="skeleton" style={{ height: '220px' }} />
+              ) : userLevel ? (
                 <>
-                  <p style={{ fontSize: '13px', color: 'var(--color-muted)', marginBottom: '8px' }}>Niveau Actuel Estimé</p>
-                  <div style={{ 
-                    fontFamily: 'var(--font-heading)', 
-                    fontSize: '64px', 
-                    fontWeight: 600, 
-                    color: 'var(--color-primary)', 
-                    lineHeight: 1, 
-                    marginBottom: '16px' 
-                  }}>
-                    {stats?.niveauEstime || 'A2'}
+                  <div style={{ fontSize: '13px', color: 'var(--color-muted)', marginBottom: '8px' }}>
+                    NIVEAU GLOBAL • Mis à jour le {new Date(userLevel.last_updated).toLocaleDateString('fr-FR')}
                   </div>
-                  <div style={{ 
-                    width: '100%', 
-                    backgroundColor: 'var(--color-background)', 
-                    border: '1px solid var(--color-muted)', 
-                    height: '8px', 
-                    overflow: 'hidden', 
-                    marginBottom: '8px' 
+
+                  <div style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: '72px',
+                    fontWeight: 600,
+                    color: 'var(--color-primary)',
+                    lineHeight: 1,
+                    marginBottom: '8px'
                   }}>
-                    <div style={{ 
-                      backgroundColor: 'var(--color-primary)', 
-                      height: '100%', 
-                      width: `${stats?.progression || 0}%` 
-                    }} />
+                    {userLevel.global_level}
                   </div>
-                  <p style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
-                    {stats?.progression || 0}% de préparation vers l'objectif
-                  </p>
+
+                  <div style={{ fontSize: '18px', color: 'var(--color-text)', marginBottom: '24px' }}>
+                    {userLevel.global_score}/100
+                  </div>
+
+                  {/* Sous-scores */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>Écrit</div>
+                      <div style={{ fontSize: '22px', fontWeight: 600 }}>{userLevel.writing_score}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>Voltaire</div>
+                      <div style={{ fontSize: '22px', fontWeight: 600 }}>{userLevel.voltaire_score}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>Oral</div>
+                      <div style={{ fontSize: '22px', fontWeight: 600 }}>{userLevel.speaking_score}</div>
+                    </div>
+                  </div>
+
+                  {/* Forces & Faiblesses */}
+                  {(userLevel.strengths || userLevel.weaknesses) && (
+                    <div style={{ marginTop: '32px', textAlign: 'left', fontSize: '13px', borderTop: '1px solid var(--color-muted)', paddingTop: '24px' }}>
+                      {userLevel.strengths && userLevel.strengths.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <strong>Forces :</strong> {userLevel.strengths.join(', ')}
+                        </div>
+                      )}
+                      {userLevel.weaknesses && userLevel.weaknesses.length > 0 && (
+                        <div style={{ color: '#e11d48' }}>
+                          <strong>Axes d’amélioration :</strong> {userLevel.weaknesses.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
+              ) : (
+                <div style={{ color: 'var(--color-muted)', padding: '40px 0' }}>
+                  Aucune évaluation disponible pour le moment.
+                </div>
               )}
             </div>
           </section>
 
+          {/* Statistiques Rapides (inchangée) */}
           <section>
             <h3 style={S}>Statistiques Rapides</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -301,19 +360,19 @@ export default function Dashboard() {
                 { label: 'Mots Rédigés', value: loading ? '—' : (stats?.motCount || 0).toLocaleString('fr-FR') },
                 { label: 'Modules Finis', value: loading ? '—' : `${stats?.modulesCompletes || 0} / ${stats?.modulesTotal || 0}` }
               ].map(s => (
-                <div key={s.label} style={{ 
-                  backgroundColor: 'var(--color-surface)', 
-                  border: '1px solid var(--color-muted)', 
-                  borderRadius: '2px', 
-                  padding: '16px' 
+                <div key={s.label} style={{
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-muted)',
+                  borderRadius: '2px',
+                  padding: '16px'
                 }}>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    fontWeight: 600, 
-                    letterSpacing: '0.1em', 
-                    textTransform: 'uppercase' as const, 
-                    color: 'var(--color-muted)', 
-                    marginBottom: '6px' 
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase' as const,
+                    color: 'var(--color-muted)',
+                    marginBottom: '6px'
                   }}>
                     {s.label}
                   </div>
