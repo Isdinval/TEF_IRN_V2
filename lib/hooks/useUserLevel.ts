@@ -1,5 +1,5 @@
 // lib/hooks/useUserLevel.ts
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 
@@ -9,9 +9,10 @@ export type UserLevel = {
   writing_score: number
   voltaire_score: number
   speaking_score: number
-  strengths: string[]
-  weaknesses: string[]
+  strengths: string[] | null
+  weaknesses: string[] | null
   last_updated: string
+  total_exercices?: number
 }
 
 export function useUserLevel() {
@@ -19,25 +20,26 @@ export function useUserLevel() {
   const [level, setLevel] = useState<UserLevel | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refreshLevel = async () => {
+  const refreshLevel = useCallback(async () => {
     if (!user) return
 
-    // Calcul du niveau
     await supabase.rpc('calculate_user_level', { p_user_id: user.id })
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('user_level_evaluations')
       .select('*')
       .eq('user_id', user.id)
       .single()
 
+    if (error && error.code !== 'PGRST116') console.error(error) // PGRST116 = no rows
     if (data) setLevel(data)
+
     setLoading(false)
-  }
+  }, [user])
 
   useEffect(() => {
     refreshLevel()
-  }, [user])
+  }, [refreshLevel])
 
   return { level, loading, refreshLevel }
 }
