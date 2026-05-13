@@ -34,35 +34,65 @@ export default function EcritureClient() {
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedSection, setSelectedSection] = useState<'A' | 'B' | 'ALL'>('ALL')
 
   const motCount = countWords(texte)
 
-  // Charger tous les prompts
+  // Charger les prompts + historique de l'utilisateur
   useEffect(() => {
-    const loadPrompts = async () => {
+    const loadData = async () => {
       setLoading(true)
       setError(null)
 
-      const { data, error: supabaseError } = await supabase
+      // 1. Charger tous les prompts
+      const { data: promptsData, error: promptsError } = await supabase
         .from('ecriture_prompts')
         .select('*')
         .order('ordre', { ascending: true })
 
-      if (supabaseError) {
-        console.error("Erreur Supabase:", supabaseError)
-        setError(supabaseError.message)
-      } else if (data && data.length > 0) {
-        setPrompts(data)
-        // Première recommandation (aléatoire pour l'instant)
-        setCurrentPrompt(data[Math.floor(Math.random() * data.length)])
-      } else {
-        setError("Aucun sujet d'écriture disponible.")
+      if (promptsError || !promptsData) {
+        setError("Erreur lors du chargement des sujets")
+        setLoading(false)
+        return
       }
+
+      setPrompts(promptsData)
+
+      // 2. Charger l'historique de l'utilisateur pour recommandation intelligente
+      const { data: history } = await supabase
+        .from('soumissions')
+        .select('titre, prompt_texte')
+        .eq('user_id', user?.id)
+        .eq('statut', 'soumis')
+
+      // Recommandation intelligente
+      let recommended = promptsData[0]
+
+      if (history && history.length > 0) {
+        const sectionACount = history.filter(h => h.titre.includes('SECTION A') || h.titre.includes('Sujet A')).length
+        const sectionBCount = history.length - sectionACount
+
+        // Priorité à la section la moins travaillée
+        if (selectedSection === 'ALL') {
+          if (sectionBCount < sectionACount) {
+            const sectionBPrompts = promptsData.filter(p => p.section.includes('B'))
+            if (sectionBPrompts.length > 0) recommended = sectionBPrompts[Math.floor(Math.random() * sectionBPrompts.length)]
+          } else {
+            const sectionAPrompts = promptsData.filter(p => p.section.includes('A'))
+            if (sectionAPrompts.length > 0) recommended = sectionAPrompts[Math.floor(Math.random() * sectionAPrompts.length)]
+          }
+        }
+      } else {
+        // Premier essai → sujet aléatoire
+        recommended = promptsData[Math.floor(Math.random() * promptsData.length)]
+      }
+
+      setCurrentPrompt(recommended)
       setLoading(false)
     }
 
-    loadPrompts()
-  }, [])
+    if (user) loadData()
+  }, [user, selectedSection])
 
   // Sauvegarde brouillon
   const saveDraft = useCallback(async () => {
@@ -80,11 +110,7 @@ export default function EcritureClient() {
     if (soumissionId) {
       await supabase.from('soumissions').update(data).eq('id', soumissionId)
     } else {
-      const { data: newSoum } = await supabase
-        .from('soumissions')
-        .insert(data)
-        .select()
-        .single()
+      const { data: newSoum } = await supabase.from('soumissions').insert(data).select().single()
       if (newSoum) setSoumissionId(newSoum.id)
     }
 
@@ -127,24 +153,32 @@ export default function EcritureClient() {
     setSubmitting(false)
   }
 
-  // Changer de sujet
   const changePrompt = () => {
-    if (prompts.length <= 1) return
-    const currentIndex = prompts.findIndex(p => p.id === currentPrompt?.id)
-    let newIndex = currentIndex
+    let filteredPrompts = prompts
 
-    // Évite de retomber sur le même sujet
-    while (newIndex === currentIndex) {
-      newIndex = Math.floor(Math.random() * prompts.length)
+    if (selectedSection !== 'ALL') {
+      filteredPrompts = prompts.filter(p => p.section.includes(selectedSection))
     }
 
-    setCurrentPrompt(prompts[newIndex])
+    if (filteredPrompts.length === 0) return
+
+    const currentIndex = filteredPrompts.findIndex(p => p.id === currentPrompt?.id)
+    let newIndex = currentIndex
+
+    while (newIndex === currentIndex) {
+      newIndex = Math.floor(Math.random() * filteredPrompts.length)
+    }
+
+    setCurrentPrompt(filteredPrompts[newIndex])
     setTexte('')
     setSoumissionId(null)
   }
 
-  // ==================== RENDU ====================
-  if (loading) return <AppLayout><div style={{ padding: '80px', textAlign: 'center' }}>Chargement du sujet...</div></AppLayout>
+  const filterSection = (section: 'A' | 'B' | 'ALL') => {
+    setSelectedSection(section)
+  }
+
+  if (loading) return <AppLayout><div style={{ padding: '80px', textAlign: 'center' }}>Préparation du meilleur exercice pour vous...</div></AppLayout>
   if (error) return <AppLayout><div style={{ padding: '80px', textAlign: 'center', color: 'red' }}>{error}</div></AppLayout>
   if (!currentPrompt) return <AppLayout><div>Aucun sujet disponible.</div></AppLayout>
 
@@ -154,7 +188,7 @@ export default function EcritureClient() {
     <AppLayout>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        {/* Header simplifié */}
+        {/* Header */}
         <header style={{ 
           padding: '12px 32px', 
           borderBottom: '1px solid var(--color-muted)', 
@@ -167,19 +201,24 @@ export default function EcritureClient() {
             ← Retour
           </button>
 
-          <button 
-            onClick={changePrompt}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'var(--color-background)',
-              border: '1px solid var(--color-muted)',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            🔄 Changer de sujet
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => filterSection('ALL')} className={selectedSection === 'ALL' ? 'active' : ''} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'ALL' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'ALL' ? 'white' : 'inherit' }}>
+              Tous
+            </button>
+            <button onClick={() => filterSection('A')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'A' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'A' ? 'white' : 'inherit' }}>
+              Section A
+            </button>
+            <button onClick={() => filterSection('B')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'B' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'B' ? 'white' : 'inherit' }}>
+              Section B
+            </button>
+
+            <button 
+              onClick={changePrompt}
+              style={{ padding: '6px 16px', marginLeft: '12px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-muted)', borderRadius: '4px' }}
+            >
+              🔄 Autre sujet
+            </button>
+          </div>
         </header>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -237,7 +276,6 @@ export default function EcritureClient() {
               />
             </div>
 
-            {/* Barre du bas */}
             <div style={{ 
               borderTop: '1px solid var(--color-muted)', 
               backgroundColor: 'var(--color-background)', 
