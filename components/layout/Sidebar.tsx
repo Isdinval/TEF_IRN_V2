@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useUserLevel } from '@/lib/hooks/useUserLevel'
 
 // Import des icônes Lucide
 import { 
@@ -38,6 +39,8 @@ export default function Sidebar() {
   const initials = profile?.full_name 
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) 
     : 'JD'
+
+  const { level } = useUserLevel()
 
   return (
     <aside 
@@ -175,7 +178,9 @@ export default function Sidebar() {
               fontSize: '11px', 
               color: 'var(--color-muted)' 
             }}>
-              {profile?.niveau_estime || 'A2'}
+              <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
+                Niveau estimé : {level?.global_level || profile?.niveau_estime || 'A2'}
+              </div>
             </div>
           </div>
 
