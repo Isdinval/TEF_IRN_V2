@@ -52,42 +52,53 @@ export default function CorrectionDetailPage() {
   }
 
   const runCorrection = async (soum: Soumission) => {
-    setAnalyzing(true)
-    try {
-      const res = await fetch('/api/correct', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          texte: soum.texte_soumis, 
-          prompt_texte: soum.prompt_texte,
-          section: soum.section 
-        }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
+  setAnalyzing(true)
+  try {
+    const res = await fetch('/api/correct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        texte: soum.texte_soumis, 
+        prompt_texte: soum.prompt_texte,
+        section: soum.section 
+      }),
+    })
 
-      const { data: newCorr } = await supabase.from('corrections').insert({
-        soumission_id: id,
-        user_id: user!.id,
-        note_globale: data.note_globale,
-        note_max: data.note_max || 15,
-        niveau_cefr: data.niveau_cefr,
-        scores_detail: data.scores_detail || {},
-        erreurs: data.erreurs || [],
-        points_forts: data.points_forts || [],
-        resume_feedback: data.resume_feedback,
-        recommandation_prochaine: data.recommandation_prochaine,
-        texte_annote: data.texte_annote || soum.texte_soumis,
-      }).select().single()
+    const data = await res.json()
+    if (data.error) throw new Error(data.error)
 
-      await supabase.from('soumissions').update({ statut: 'corrige' }).eq('id', id)
+    const { data: newCorr } = await supabase.from('corrections').insert({
+      soumission_id: id,
+      user_id: user!.id,
+      note_globale: data.note_globale,
+      note_max: data.note_max || 15,
+      niveau_cefr: data.niveau_cefr,
+      scores_detail: data.scores_detail || {},
+      erreurs: data.erreurs || [],
+      points_forts: data.points_forts || [],
+      resume_feedback: data.resume_feedback,
+      recommandation_prochaine: data.recommandation_prochaine,
+      texte_annote: data.texte_annote || soum.texte_soumis,
+    }).select().single()
 
-      if (newCorr) setCorrection(newCorr)
-    } catch (err) {
-      console.error(err)
+    await supabase.from('soumissions').update({ statut: 'corrige' }).eq('id', id)
+
+    if (newCorr) {
+      setCorrection(newCorr)
+      
+      // Rafraîchissement forcé des données utilisateur (radar + niveau)
+      await supabase.rpc('refresh_user_stats', { user_uuid: user!.id })
+      
+      // Optionnel : recharger la page pour voir le radar mis à jour immédiatement
+      setTimeout(() => {
+        window.location.reload()
+      }, 1200)
     }
-    setAnalyzing(false)
+  } catch (err) {
+    console.error(err)
   }
+  setAnalyzing(false)
+}
 
   const renderAnnotatedText = () => {
     if (!correction) return null
