@@ -373,7 +373,7 @@ export default function CorrectionDetailPage() {
                       Points forts
                     </div>
                     <ul style={{ paddingLeft: '20px', color: '#059669' }}>
-                      {correction.points_forts.map((point, i) => (
+                      {correction.points_forts.map((point: string, i: number) => (
                         <li key={i} style={{ marginBottom: '8px', fontSize: '14px' }}>✓ {point}</li>
                       ))}
                     </ul>
