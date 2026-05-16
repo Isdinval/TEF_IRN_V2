@@ -30,7 +30,10 @@ export default function CorrectionDetailPage() {
       .eq('user_id', user!.id)
       .single()
 
-    if (!soum) { router.push('/corrections'); return }
+    if (!soum) { 
+      router.push('/corrections'); 
+      return 
+    }
     setSoumission(soum)
 
     const { data: corr } = await supabase
@@ -43,7 +46,6 @@ export default function CorrectionDetailPage() {
       setCorrection(corr)
       setLoading(false)
     } else {
-      // Trigger AI correction
       setLoading(false)
       runCorrection(soum)
     }
@@ -55,24 +57,29 @@ export default function CorrectionDetailPage() {
       const res = await fetch('/api/correct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texte: soum.texte_soumis, prompt_texte: soum.prompt_texte }),
+        body: JSON.stringify({ 
+          texte: soum.texte_soumis, 
+          prompt_texte: soum.prompt_texte,
+          section: soum.section 
+        }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
 
-      // Save correction to DB
       const { data: newCorr } = await supabase.from('corrections').insert({
         soumission_id: id,
         user_id: user!.id,
         note_globale: data.note_globale,
         note_max: data.note_max || 15,
         niveau_cefr: data.niveau_cefr,
+        scores_detail: data.scores_detail || {},
         erreurs: data.erreurs || [],
+        points_forts: data.points_forts || [],
         resume_feedback: data.resume_feedback,
+        recommandation_prochaine: data.recommandation_prochaine,
         texte_annote: data.texte_annote || soum.texte_soumis,
       }).select().single()
 
-      // Update soumission status
       await supabase.from('soumissions').update({ statut: 'corrige' }).eq('id', id)
 
       if (newCorr) setCorrection(newCorr)
@@ -82,7 +89,6 @@ export default function CorrectionDetailPage() {
     setAnalyzing(false)
   }
 
-  // Render annotated text with error highlights
   const renderAnnotatedText = () => {
     if (!correction) return null
     const texte = correction.texte_annote || soumission?.texte_soumis || ''
@@ -90,7 +96,9 @@ export default function CorrectionDetailPage() {
     return parts.map((part, i) => {
       const errMatch = part.match(/\[ERR\](.*?)\[\/ERR\]/)
       if (errMatch) {
-        const errIndex = correction.erreurs.findIndex(e => e.original === errMatch[1] || part.includes(e.original))
+        const errIndex = correction.erreurs.findIndex(e => 
+          e.original === errMatch[1] || part.includes(e.original)
+        )
         return (
           <mark
             key={i}
@@ -99,6 +107,8 @@ export default function CorrectionDetailPage() {
             style={{
               backgroundColor: selectedError === errIndex ? '#FCA5A5' : '#FEE2E2',
               cursor: 'pointer',
+              padding: '2px 4px',
+              borderRadius: '2px',
             }}
           >
             {errMatch[1]}
@@ -115,21 +125,27 @@ export default function CorrectionDetailPage() {
       ORTHOGRAPHE: 'Orthographe',
       SYNTAXE: 'Syntaxe',
       VOCABULAIRE: 'Vocabulaire',
-      PONCTUATION: 'Ponctuation',
+      COHESION: 'Cohésion',
     }
     return labels[cat] || cat
   }
 
-  const getScoreColor = (note: number, max: number) => {
-    const pct = note / max
-    if (pct >= 0.8) return '#059669'
-    if (pct >= 0.6) return '#D97706'
-    return 'var(--color-accent)'
+  const getScoreColor = (note: number) => {
+    if (note >= 2.5) return '#059669'
+    if (note >= 1.8) return '#D97706'
+    return '#DC2626'
+  }
+
+  const criteriaNames: Record<string, string> = {
+    contenu: 'Contenu',
+    lexique: 'Lexique',
+    morphosyntaxe: 'Morphosyntaxe',
+    orthographe: 'Orthographe',
+    cohesion: 'Cohésion'
   }
 
   return (
     <AppLayout>
-      {/* Header */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
@@ -150,22 +166,21 @@ export default function CorrectionDetailPage() {
         {correction && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)' }}>
-              Note globale (CECRL)
+              Note globale
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontFamily: 'var(--font-heading)', fontSize: '36px', fontWeight: 600, color: getScoreColor(correction.note_globale, correction.note_max) }}>
+              <span style={{ fontFamily: 'var(--font-heading)', fontSize: '42px', fontWeight: 600, color: getScoreColor(correction.note_globale / 15 * 3) }}>
                 {correction.note_globale}
               </span>
-              <span style={{ fontSize: '18px', color: 'var(--color-muted)' }}>/ {correction.note_max}</span>
+              <span style={{ fontSize: '18px', color: 'var(--color-muted)' }}>/ 15</span>
               <span style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'white',
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 700,
-                padding: '4px 10px',
+                padding: '4px 12px',
                 borderRadius: '2px',
                 letterSpacing: '0.1em',
-                marginLeft: '8px',
               }}>
                 {correction.niveau_cefr}
               </span>
@@ -174,7 +189,6 @@ export default function CorrectionDetailPage() {
         )}
       </header>
 
-      {/* Analyzing state */}
       {analyzing && (
         <div style={{
           flex: 1,
@@ -189,27 +203,26 @@ export default function CorrectionDetailPage() {
           <div style={{
             width: '64px',
             height: '64px',
-            border: '2px solid var(--color-muted)',
-            borderTop: '2px solid var(--color-primary)',
+            border: '3px solid var(--color-muted)',
+            borderTop: '3px solid var(--color-primary)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <div style={{ textAlign: 'center' }}>
             <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', color: 'var(--color-text)', marginBottom: '8px' }}>
-              Analyse éditoriale en cours...
+              Correction en cours...
             </h3>
             <p style={{ fontSize: '14px', color: 'var(--color-muted)' }}>
-              L'Académie examine votre texte. Cela peut prendre quelques instants.
+              L’examinateur TEF IRN analyse votre texte
             </p>
           </div>
         </div>
       )}
 
-      {/* Main content */}
       {!analyzing && soumission && (
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* Left: Annotated text */}
+          {/* Texte annoté */}
           <div style={{
             flex: 1,
             overflowY: 'auto',
@@ -218,153 +231,162 @@ export default function CorrectionDetailPage() {
           }}>
             <div style={{ marginBottom: '24px' }}>
               <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '4px' }}>
-                Votre soumission
+                Votre soumission — {soumission.section || 'Section inconnue'}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
                 Soumis le {new Date(soumission.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • {soumission.mot_count || 0} mots
               </div>
             </div>
-            <div style={{ width: '100%', borderBottom: '1px solid var(--color-muted)', marginBottom: '32px' }} />
 
-            {loading ? (
-              <div className="skeleton" style={{ height: '400px', borderRadius: '2px' }} />
-            ) : (
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '18px',
-                lineHeight: 1.9,
-                color: 'var(--color-text)',
-                whiteSpace: 'pre-wrap',
-              }}>
-                {correction ? renderAnnotatedText() : soumission.texte_soumis}
-              </div>
-            )}
+            <div style={{ 
+              fontFamily: 'var(--font-heading)', 
+              fontSize: '18px', 
+              lineHeight: 1.85, 
+              color: 'var(--color-text)', 
+              whiteSpace: 'pre-wrap' 
+            }}>
+              {correction ? renderAnnotatedText() : soumission.texte_soumis}
+            </div>
 
-            {correction && (
+            {correction && correction.resume_feedback && (
               <div style={{
-                marginTop: '40px',
-                padding: '20px',
+                marginTop: '48px',
+                padding: '24px',
                 backgroundColor: 'var(--color-background)',
                 border: '1px solid var(--color-muted)',
                 borderRadius: '2px',
               }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '10px' }}>
-                  Synthèse globale
+                <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '12px' }}>
+                  Synthèse de l’examinateur
                 </div>
-                <p style={{ fontSize: '14px', color: 'var(--color-text)', lineHeight: 1.7 }}>
+                <p style={{ fontSize: '15px', lineHeight: 1.7, color: 'var(--color-text)' }}>
                   {correction.resume_feedback}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Right: Errors drawer */}
+          {/* Panneau latéral analyse */}
           <div style={{
-            width: '380px',
+            width: '420px',
             flexShrink: 0,
             overflowY: 'auto',
             backgroundColor: 'var(--color-surface)',
-            padding: '24px',
+            padding: '32px 24px',
           }}>
-            {!correction ? (
-              <div style={{ color: 'var(--color-muted)', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>
-                Aucune correction disponible.
-              </div>
-            ) : (
+            {correction && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)' }}>
-                    Analyse Éditoriale
+                {/* Scores détaillés */}
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '16px' }}>
+                    Scores détaillés
                   </div>
-                  <div style={{
-                    backgroundColor: correction.erreurs.length > 0 ? '#FEE2E2' : '#D1FAE5',
-                    color: correction.erreurs.length > 0 ? 'var(--color-accent)' : '#065F46',
-                    border: `1px solid ${correction.erreurs.length > 0 ? 'rgba(217,42,42,0.3)' : '#A7F3D0'}`,
-                    borderRadius: '2px',
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                  }}>
-                    {correction.erreurs.length} erreur{correction.erreurs.length !== 1 ? 's' : ''} détectée{correction.erreurs.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {correction.erreurs.map((err, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedError(selectedError === i ? null : i)}
-                      style={{
-                        border: `1px solid ${selectedError === i ? 'var(--color-accent)' : 'var(--color-muted)'}`,
-                        borderRadius: '2px',
-                        padding: '16px',
-                        cursor: 'pointer',
-                        backgroundColor: selectedError === i ? '#FFF5F5' : 'var(--color-surface)',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {/* Category badge */}
-                      <div style={{ marginBottom: '10px' }}>
-                        <span style={{
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          letterSpacing: '0.15em',
-                          textTransform: 'uppercase',
-                          color: 'var(--color-accent)',
-                          backgroundColor: '#FEE2E2',
-                          padding: '3px 8px',
-                          borderRadius: '2px',
-                        }}>
-                          Erreur {String(i + 1).padStart(2, '0')} / {getCategoryLabel(err.categorie)}
-                        </span>
+                  {Object.entries(correction.scores_detail || {}).map(([key, value]) => (
+                    <div key={key} style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
+                        <span>{criteriaNames[key] || key}</span>
+                        <span style={{ fontWeight: 600, color: getScoreColor(value) }}>{value} / 3</span>
                       </div>
-
-                      {/* Original vs corrected */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px', color: 'var(--color-accent)' }}>×</span>
-                          <span style={{
-                            fontSize: '15px',
-                            fontFamily: 'var(--font-heading)',
-                            color: 'var(--color-accent)',
-                            textDecoration: 'line-through',
-                          }}>
-                            {err.original}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px', color: '#059669' }}>✓</span>
-                          <span style={{
-                            fontSize: '15px',
-                            fontFamily: 'var(--font-heading)',
-                            color: '#059669',
-                            fontWeight: 500,
-                          }}>
-                            {err.corrige}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Explanation */}
-                      <div style={{ borderTop: '1px solid var(--color-muted)', paddingTop: '10px' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '4px' }}>
-                          Note de correction :
-                        </div>
-                        <p style={{ fontSize: '13px', color: 'var(--color-text)', lineHeight: 1.6 }}>
-                          {err.explication}
-                        </p>
+                      <div style={{
+                        height: '6px',
+                        backgroundColor: 'var(--color-muted)',
+                        borderRadius: '9999px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${(value / 3) * 100}%`,
+                          height: '100%',
+                          backgroundColor: getScoreColor(value),
+                          transition: 'width 0.6s ease'
+                        }} />
                       </div>
                     </div>
                   ))}
-
-                  {correction.erreurs.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-muted)' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '40px', display: 'block', marginBottom: '12px', color: '#10B981' }}>check_circle</span>
-                      <p style={{ fontSize: '14px' }}>Aucune erreur détectée. Excellent travail !</p>
-                    </div>
-                  )}
                 </div>
+
+                {/* Points forts */}
+                {correction.points_forts && correction.points_forts.length > 0 && (
+                  <div style={{ marginBottom: '32px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '12px' }}>
+                      Points forts
+                    </div>
+                    <ul style={{ paddingLeft: '20px', color: '#059669' }}>
+                      {correction.points_forts.map((point, i) => (
+                        <li key={i} style={{ marginBottom: '8px', fontSize: '14px' }}>✓ {point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Erreurs */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)' }}>
+                      Erreurs détectées
+                    </div>
+                    <div style={{
+                      backgroundColor: '#FEE2E2',
+                      color: 'var(--color-accent)',
+                      padding: '3px 10px',
+                      borderRadius: '2px',
+                      fontSize: '11px',
+                      fontWeight: 700
+                    }}>
+                      {correction.erreurs.length}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {correction.erreurs.map((err, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setSelectedError(selectedError === i ? null : i)}
+                        style={{
+                          border: `1px solid ${selectedError === i ? 'var(--color-accent)' : 'var(--color-muted)'}`,
+                          borderRadius: '2px',
+                          padding: '16px',
+                          cursor: 'pointer',
+                          backgroundColor: selectedError === i ? '#FFF5F5' : 'transparent',
+                        }}
+                      >
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            backgroundColor: '#FEE2E2',
+                            color: 'var(--color-accent)',
+                            padding: '2px 8px',
+                            borderRadius: '2px'
+                          }}>
+                            {getCategoryLabel(err.categorie)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '14px', marginBottom: '6px' }}>
+                          <span style={{ textDecoration: 'line-through', color: '#B91C1C' }}>{err.original}</span>
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#166534' }}>
+                          → {err.corrige}
+                        </div>
+                        <p style={{ fontSize: '13px', color: 'var(--color-muted)', marginTop: '10px', lineHeight: 1.5 }}>
+                          {err.explication}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {correction.recommandation_prochaine && (
+                  <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '2px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: '#0369A1', marginBottom: '8px' }}>
+                      RECOMMANDATION
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#0C4A6E' }}>
+                      {correction.recommandation_prochaine}
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
