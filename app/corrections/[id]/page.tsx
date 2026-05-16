@@ -337,27 +337,33 @@ export default function CorrectionDetailPage() {
                   <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '16px' }}>
                     Scores détaillés
                   </div>
-                  {Object.entries(correction.scores_detail || {}).map(([key, value]) => (
-                    <div key={key} style={{ marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                        <span>{criteriaNames[key] || key}</span>
-                        <span style={{ fontWeight: 600, color: getScoreColor(value) }}>{value} / 3</span>
-                      </div>
-                      <div style={{
-                        height: '6px',
-                        backgroundColor: 'var(--color-muted)',
-                        borderRadius: '9999px',
-                        overflow: 'hidden'
-                      }}>
+                  {Object.entries(correction.scores_detail || {}).map(([key, valueRaw]) => {
+                    const value = Number(valueRaw) || 0   // Conversion explicite
+                    
+                    return (
+                      <div key={key} style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
+                          <span>{criteriaNames[key] || key}</span>
+                          <span style={{ fontWeight: 600, color: getScoreColor(value) }}>
+                            {value} / 3
+                          </span>
+                        </div>
                         <div style={{
-                          width: `${(value / 3) * 100}%`,
-                          height: '100%',
-                          backgroundColor: getScoreColor(value),
-                          transition: 'width 0.6s ease'
-                        }} />
+                          height: '6px',
+                          backgroundColor: 'var(--color-muted)',
+                          borderRadius: '9999px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${(value / 3) * 100}%`,
+                            height: '100%',
+                            backgroundColor: getScoreColor(value),
+                            transition: 'width 0.6s ease'
+                          }} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 {/* Points forts */}
