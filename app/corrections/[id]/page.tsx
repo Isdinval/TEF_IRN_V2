@@ -394,12 +394,12 @@ export default function CorrectionDetailPage() {
                       fontSize: '11px',
                       fontWeight: 700
                     }}>
-                      {correction.erreurs.length}
+                      {correction.erreurs?.length || 0}
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {correction.erreurs.map((err, i) => (
+                    {correction.erreurs?.map((err: any, i: number) => (
                       <div
                         key={i}
                         onClick={() => setSelectedError(selectedError === i ? null : i)}
