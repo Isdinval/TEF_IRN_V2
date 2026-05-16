@@ -1,9 +1,12 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
-import { supabase, Correction, Soumission } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+
+type Soumission = any
+type Correction = any
 
 export default function CorrectionDetailPage() {
   const { user } = useAuth()
@@ -15,27 +18,32 @@ export default function CorrectionDetailPage() {
   const [correction, setCorrection] = useState<Correction | null>(null)
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [selectedError, setSelectedError] = useState<number | null>(null)
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user || !id) return
-    loadData()
-  }, [user, id])
 
-  const loadData = async () => {
-    const { data: soum } = await supabase
+    setLoading(true)
+    setError(null)
+
+    // Charger la soumission
+    const { data: soum, error: soumError } = await supabase
       .from('soumissions')
       .select('*')
       .eq('id', id)
-      .eq('user_id', user!.id)
+      .eq('user_id', user.id)
       .single()
 
-    if (!soum) { 
-      router.push('/corrections'); 
-      return 
+    if (soumError || !soum) {
+      setError("Soumission introuvable")
+      setLoading(false)
+      return
     }
+
     setSoumission(soum)
 
+    // Charger la correction existante
     const { data: corr } = await supabase
       .from('corrections')
       .select('*')
@@ -45,60 +53,81 @@ export default function CorrectionDetailPage() {
     if (corr) {
       setCorrection(corr)
       setLoading(false)
-    } else {
+    } else if (soum.statut !== 'corrige') {
       setLoading(false)
       runCorrection(soum)
+    } else {
+      setLoading(false)
     }
-  }
+  }, [user, id])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+
+
+
+  
 
   const runCorrection = async (soum: Soumission) => {
-  setAnalyzing(true)
-  try {
-    const res = await fetch('/api/correct', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        texte: soum.texte_soumis, 
-        prompt_texte: soum.prompt_texte,
-        section: soum.section 
-      }),
-    })
+    if (analyzing) return
+    setAnalyzing(true)
+    setError(null)
 
-    const data = await res.json()
-    if (data.error) throw new Error(data.error)
+    try {
+      const res = await fetch('/api/correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texte: soum.texte_soumis,
+          prompt_texte: soum.prompt_texte,
+          section: soum.section
+        }),
+      })
 
-    const { data: newCorr } = await supabase.from('corrections').insert({
-      soumission_id: id,
-      user_id: user!.id,
-      note_globale: data.note_globale,
-      note_max: data.note_max || 15,
-      niveau_cefr: data.niveau_cefr,
-      scores_detail: data.scores_detail || {},
-      erreurs: data.erreurs || [],
-      points_forts: data.points_forts || [],
-      resume_feedback: data.resume_feedback,
-      recommandation_prochaine: data.recommandation_prochaine,
-      texte_annote: data.texte_annote || soum.texte_soumis,
-    }).select().single()
+      if (!res.ok) throw new Error('Erreur API')
 
-    await supabase.from('soumissions').update({ statut: 'corrige' }).eq('id', id)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
 
-    if (newCorr) {
+      const { data: newCorr, error: insertError } = await supabase
+        .from('corrections')
+        .insert({
+          soumission_id: id,
+          user_id: user!.id,
+          note_globale: data.note_globale ?? 0,
+          note_max: data.note_max || 15,
+          niveau_cefr: data.niveau_cefr || 'A2',
+          scores_detail: data.scores_detail || {},
+          erreurs: data.erreurs || [],
+          points_forts: data.points_forts || [],
+          resume_feedback: data.resume_feedback,
+          recommandation_prochaine: data.recommandation_prochaine,
+          texte_annote: data.texte_annote || soum.texte_soumis,
+        })
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+
+      await supabase
+        .from('soumissions')
+        .update({ statut: 'corrige' })
+        .eq('id', id)
+
       setCorrection(newCorr)
       
-      // Rafraîchissement forcé des données utilisateur (radar + niveau)
+      // Refresh stats
       await supabase.rpc('refresh_user_stats', { user_uuid: user!.id })
-      
-      // Optionnel : recharger la page pour voir le radar mis à jour immédiatement
-      setTimeout(() => {
-        window.location.reload()
-      }, 1200)
+
+    } catch (err: any) {
+      console.error("Erreur correction :", err)
+      setError(err.message || "Impossible de générer la correction")
+    } finally {
+      setAnalyzing(false)
     }
-  } catch (err) {
-    console.error(err)
   }
-  setAnalyzing(false)
-}
 
   const renderAnnotatedText = () => {
     if (!correction) return null
@@ -154,6 +183,19 @@ export default function CorrectionDetailPage() {
     orthographe: 'Orthographe',
     cohesion: 'Cohésion'
   }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          <h2>Erreur</h2>
+          <p>{error}</p>
+          <button onClick={() => loadData()}>Réessayer</button>
+        </div>
+      </AppLayout>
+    )
+  }
+  
 
   return (
     <AppLayout>
