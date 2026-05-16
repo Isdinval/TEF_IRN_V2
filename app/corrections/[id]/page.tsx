@@ -130,15 +130,18 @@ export default function CorrectionDetailPage() {
   }
 
   const renderAnnotatedText = () => {
-    if (!correction) return null
-    const texte = correction.texte_annote || soumission?.texte_soumis || ''
+    if (!correction && !soumission) return null
+
+    const texte = correction?.texte_annote || soumission?.texte_soumis || ''
     const parts = texte.split(/(\[ERR\].*?\[\/ERR\])/g)
-    return parts.map((part, i) => {
+
+    return parts.map((part: string, i: number) => {
       const errMatch = part.match(/\[ERR\](.*?)\[\/ERR\]/)
       if (errMatch) {
-        const errIndex = correction.erreurs.findIndex(e => 
+        const errIndex = correction?.erreurs?.findIndex((e: any) => 
           e.original === errMatch[1] || part.includes(e.original)
-        )
+        ) ?? -1
+
         return (
           <mark
             key={i}
