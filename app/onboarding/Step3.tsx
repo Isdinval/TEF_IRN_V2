@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/layout/ui/button';
 
 const skills = [
   { key: 'listening', label: 'Compréhension orale' },
