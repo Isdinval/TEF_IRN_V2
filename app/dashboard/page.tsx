@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { Profile } from '@/lib/supabase';
 import Link from 'next/link';
@@ -13,7 +13,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function Dashboard() {
 
       setProfile(profileData);
 
-      if (searchParams.get('welcome') === 'true') {
+      if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('welcome') === 'true') {
         setWelcome(true);
         setTimeout(() => setWelcome(false), 6000);
       }
@@ -41,7 +40,7 @@ export default function Dashboard() {
     };
 
     fetchProfileAndData();
-  }, [router, searchParams]);
+  }, [router]);
 
   if (loading || !profile) {
     return (
