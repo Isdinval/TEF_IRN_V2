@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/layout/ui/button';
+import { Calendar } from '@/components/layout/ui/calendar';
 import { format } from 'date-fns';
 
 export default function OnboardingStep2({ data, updateData, next, prev }: any) {
