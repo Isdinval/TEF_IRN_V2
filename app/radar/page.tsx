@@ -82,10 +82,16 @@ export default function RadarPage() {
   const [loading, setLoading] = useState(true)
   const [niveauEstime, setNiveauEstime] = useState<string>('B1')
   const [progression, setProgression] = useState('+15%')
+  const [updatedNotice, setUpdatedNotice] = useState(false)
 
   useEffect(() => {
     if (!user) return
     loadData()
+    if (typeof window !== 'undefined' && window.localStorage.getItem('competences_updated') === '1') {
+      setUpdatedNotice(true)
+      window.localStorage.removeItem('competences_updated')
+      setTimeout(() => setUpdatedNotice(false), 6000)
+    }
   }, [user])
 
   const loadData = async () => {
@@ -139,6 +145,11 @@ export default function RadarPage() {
       </header>
 
       <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+        {updatedNotice && (
+          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#DBEAFE', color: '#1E3A8A', border: '1px solid #93C5FD' }}>
+            Compétences mises à jour suite à votre activité récente.
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', maxWidth: '1100px' }}>
           {/* Left: Chart */}
           <div style={{

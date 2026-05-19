@@ -67,6 +67,17 @@ export default function ExercicesPage() {
       reponse_correcte: isCorrect,
       temps_reponse_ms: tempsMs,
     })
+
+    await fetch('/api/competences/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'voltaire',
+        user_id: user!.id,
+        category: (current.categorie || 'grammaire').toLowerCase(),
+        correct: isCorrect,
+      }),
+    })
   }
 
   const handleNoError = async () => {
@@ -87,6 +98,17 @@ export default function ExercicesPage() {
       exercice_id: current.id,
       reponse_correcte: isCorrect,
       temps_reponse_ms: tempsMs,
+    })
+
+    await fetch('/api/competences/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'voltaire',
+        user_id: user!.id,
+        category: (current.categorie || 'grammaire').toLowerCase(),
+        correct: isCorrect,
+      }),
     })
   }
 
@@ -150,7 +172,10 @@ export default function ExercicesPage() {
                 Recommencer
               </button>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  if (typeof window !== 'undefined') window.localStorage.setItem('competences_updated', '1')
+                  router.push('/dashboard?competences=updated')
+                }}
                 style={{ 
                   backgroundColor: 'transparent', 
                   color: 'var(--color-text)', 
@@ -188,7 +213,10 @@ export default function ExercicesPage() {
         flexShrink: 0,
       }}>
         <button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => {
+                  if (typeof window !== 'undefined') window.localStorage.setItem('competences_updated', '1')
+                  router.push('/dashboard?competences=updated')
+                }}
           style={{ 
             display: 'flex', 
             alignItems: 'center', 

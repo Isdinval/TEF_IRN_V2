@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -14,8 +14,9 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
 
   // Redirection après auth
   useEffect(() => {
@@ -62,7 +63,8 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            data: { first_name: firstName }
+            data: { first_name: firstName },
+            emailRedirectTo,
           }
         });
         if (error) throw error;
