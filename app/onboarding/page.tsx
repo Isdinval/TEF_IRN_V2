@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import OnboardingStep1 from '@/components/onboarding/Step1';
-import OnboardingStep2 from '@/components/onboarding/Step2';
-import OnboardingStep3 from '@/components/onboarding/Step3';
-import OnboardingStep4 from '@/components/onboarding/Step4';
-import OnboardingStep5 from '@/components/onboarding/Step5';
-import ProgressBar from '@/components/onboarding/ProgressBar';
+import OnboardingStep1 from '@/app/onboarding/Step1';
+import OnboardingStep2 from '@/app/onboarding/Step2';
+import OnboardingStep3 from '@/app/onboarding/Step3';
+import OnboardingStep4 from '@/app/onboarding/Step4';
+import OnboardingStep5 from '@/app/onboarding/Step5';
+import ProgressBar from '@/app/onboarding/ProgressBar';
 
 interface OnboardingData {
   firstName: string;
