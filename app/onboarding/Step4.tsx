@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/layout/ui/button';
+import { Slider } from '@/components/layout/ui/slider';
 
 const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
