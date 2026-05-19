@@ -67,6 +67,17 @@ export default function ExercicesPage() {
       reponse_correcte: isCorrect,
       temps_reponse_ms: tempsMs,
     })
+
+    await fetch('/api/competences/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'voltaire',
+        user_id: user!.id,
+        category: (current.categorie || 'grammaire').toLowerCase(),
+        correct: isCorrect,
+      }),
+    })
   }
 
   const handleNoError = async () => {
@@ -87,6 +98,17 @@ export default function ExercicesPage() {
       exercice_id: current.id,
       reponse_correcte: isCorrect,
       temps_reponse_ms: tempsMs,
+    })
+
+    await fetch('/api/competences/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'voltaire',
+        user_id: user!.id,
+        category: (current.categorie || 'grammaire').toLowerCase(),
+        correct: isCorrect,
+      }),
     })
   }
 

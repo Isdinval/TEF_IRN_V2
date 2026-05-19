@@ -155,6 +155,13 @@ export default function CoachOralPage() {
   const resetConversation = async () => {
     if (conversationId) {
       await supabase.from('conversations_coach').update({ statut: 'termine' }).eq('id', conversationId)
+      if (user && messages.length > 0) {
+        await fetch('/api/competences/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'oral', user_id: user.id, messages }),
+        })
+      }
     }
     setMessages([])
     setHints('')
