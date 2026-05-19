@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey)
 
 export const createClient = () => {
   return createSupabaseClient(
@@ -22,6 +22,7 @@ export type Profile = {
   weekly_hours?: number;
   preferred_days?: string[];
   onboarding_completed?: boolean;
+  niveau_estime?: string | null;
   avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
