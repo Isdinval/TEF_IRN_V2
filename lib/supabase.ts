@@ -4,7 +4,29 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export type Profile = { id: string; full_name: string | null; email: string | null; niveau_estime: string; created_at: string }
+export const createClient = () => {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+};
+
+// Type Profile mis à jour
+export type Profile = {
+  id: string;
+  first_name?: string | null;
+  full_name?: string | null;
+  email?: string;
+  goal?: string | null;
+  target_exam_date?: string | null;
+  weekly_hours?: number;
+  preferred_days?: string[];
+  onboarding_completed?: boolean;
+  avatar_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type Module = {  id: string | number;  titre: string;  description?: string;  categorie: string;  subcategory?: string;  niveau?: 'A2' | 'B1' | 'B2';      duree_minutes?: number;  ordre?: number;  contenu?: any;     tags?: string[];  chapitre?: string;  created_at?: string;  updated_at?: string;}
 
 export type UserModuleProgress = { module_id: string; statut: 'non_commence' | 'en_cours' | 'complete'; score?: number }
