@@ -1,32 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { Icons } from '@/components/layout/ui/icons';
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Animated Counter corrigé
+  // Compteur animé simple et fiable (sans MotionValue direct)
   const AnimatedCounter = ({ end, suffix = "" }: { end: number; suffix?: string }) => {
-    const count = useMotionValue(0);
-    const rounded = useTransform(count, (latest) => Math.round(latest));
+    const [count, setCount] = useState(0);
 
     useEffect(() => {
-      const controls = animate(count, end, { 
-        duration: 2.2, 
-        ease: "easeOut" 
-      });
-      return () => controls.stop();
-    }, [end, count]);
+      let start = 0;
+      const duration = 2000;
+      const increment = Math.ceil(end / (duration / 16));
 
-    return (
-      <motion.span>
-        {rounded}
-        {suffix}
-      </motion.span>
-    );
+      const timer = setInterval(() => {
+        start += increment;
+        if (start >= end) {
+          setCount(end);
+          clearInterval(timer);
+        } else {
+          setCount(start);
+        }
+      }, 16);
+
+      return () => clearInterval(timer);
+    }, [end]);
+
+    return <span>{count}{suffix}</span>;
   };
 
   const faqs = [
@@ -40,7 +43,7 @@ export default function Home() {
     },
     {
       q: "La correction IA est-elle aussi précise qu'un correcteur officiel ?",
-      a: "Oui. Nous avons calibré le modèle sur des milliers de copies réelles du TEF IRN. Elle attribue une note sur 500 exactement comme l’examen officiel."
+      a: "Oui. Nous avons calibré le modèle sur des milliers de copies réelles du TEF IRN."
     },
     {
       q: "Que se passe-t-il si je ne progresse pas ?",
@@ -108,7 +111,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats avec compteurs */}
+      {/* Stats */}
       <section className="py-12 border-y border-[var(--color-muted)]/10 bg-white/50">
         <div className="mx-auto max-w-5xl px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
@@ -199,7 +202,7 @@ export default function Home() {
                 </button>
                 <motion.div
                   initial={false}
-                  animate={{ height: openFaq === index ? "auto" : 0 }}
+                  animate={{ height: openFaq === index ? "auto" : 0, opacity: openFaq === index ? 1 : 0 }}
                   className="overflow-hidden"
                 >
                   <div className="px-8 pb-8 text-[var(--color-muted)] leading-relaxed">
