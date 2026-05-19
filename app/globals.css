@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
 
 :root {
   --color-primary: #5B21B6;        /* Violet principal (indigo-violet profond) */
@@ -25,3 +25,30 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
 .skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; }
 .highlight-error { background-color: #FEE2E2; text-decoration: underline; text-decoration-color: #D92A2A; border-radius: 2px; padding: 0 2px; cursor: pointer; }
 input:focus, textarea:focus { outline: none; border-color: var(--color-primary) !important; box-shadow: 0 0 0 1px var(--color-primary); }
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes progress-bar {
+  from { width: 0%; }
+  to { width: 78%; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+.animate-progress { animation: progress-bar 1.8s ease-out; }
+.animate-in-view { animation: fade-up 0.8s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-progress,
+  .animate-in-view {
+    animation: none !important;
+  }
+}
