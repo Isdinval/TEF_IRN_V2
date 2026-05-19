@@ -1,351 +1,187 @@
-'use client'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import AppLayout from '@/components/layout/AppLayout'
-import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
-import { calculateNiveauEstime } from '@/lib/niveau-utils'
-import { Icons } from '@/components/layout/ui/icons'
-import { useUserLevel } from '@/lib/hooks/useUserLevel'
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
+import { Profile } from '@/lib/supabase';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
-  const { user, profile } = useAuth()
-  const { level: userLevel, loading: levelLoading, refreshLevel } = useUserLevel()
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [welcome, setWelcome] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [stats, setStats] = useState({
-    modulesTotal: 0,
-    modulesCompletes: 0,
-    motCount: 0,
-    progression: 0
-  })
-
-  const [activities, setActivities] = useState<{
-    id: string
-    titre: string
-    detail: string
-    statut: string
-    date: string
-    icon: string
-  }[]>([])
-
-  const [nextModule, setNextModule] = useState<{
-    id: string
-    titre: string
-    categorie: string
-    duree_minutes: number
-  } | null>(null)
-
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = createClient();
 
   useEffect(() => {
-    if (!user) return
-    loadDashboard()
-  }, [user])
+    const fetchProfileAndData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/auth');
+        return;
+      }
 
-  const loadDashboard = async () => {
-    if (!user) return
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    try {
-      const [
-        { data: progressData },
-        { data: soumissionsData },
-        { data: allModules },
-        { data: exerciceResults }
-      ] = await Promise.all([
-        supabase.from('user_module_progress').select('*, modules(*)').eq('user_id', user.id),
-        supabase.from('soumissions').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
-        supabase.from('modules').select('*').order('ordre', { ascending: true }),
-        supabase.from('user_exercice_results').select('reponse_correcte').eq('user_id', user.id)
-      ])
+      setProfile(profileData);
 
-      // Next module
-      const completedIds = new Set((progressData || []).filter(p => p.statut === 'complete').map(p => p.module_id))
-      const nextMod = allModules?.find(m => !completedIds.has(m.id)) || null
-      setNextModule(nextMod)
+      if (searchParams.get('welcome') === 'true') {
+        setWelcome(true);
+        setTimeout(() => setWelcome(false), 6000);
+      }
 
-      // Recent activities
-      const acts: any[] = []
+      setLoading(false);
+    };
 
-      progressData?.slice(0, 3).forEach((p: any) => {
-        if (p.modules) {
-          acts.push({
-            id: p.module_id,
-            titre: p.modules.titre,
-            detail: `${p.modules.categorie} • ${p.statut === 'complete' ? 'Complété' : 'En cours'}`,
-            statut: p.statut,
-            date: new Date(p.updated_at || p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-            icon: p.statut === 'complete' ? 'check_circle' : 'edit'
-          })
-        }
-      })
+    fetchProfileAndData();
+  }, [router, searchParams]);
 
-      soumissionsData?.slice(0, 2).forEach((s: any) => {
-        acts.push({
-          id: s.id,
-          titre: s.titre || 'Expression Écrite',
-          detail: `Expression Écrite • ${s.statut === 'corrige' ? 'Corrigé' : s.statut === 'soumis' ? 'En attente' : 'Brouillon'}`,
-          statut: s.statut,
-          date: new Date(s.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-          icon: s.statut === 'corrige' ? 'task_alt' : 'edit'
-        })
-      })
-
-      setActivities(acts.slice(0, 5))
-
-      // Stats
-      const totalMots = (soumissionsData || []).reduce((acc: number, s: any) => acc + (s.mot_count || 0), 0)
-
-      setStats({
-        modulesTotal: allModules?.length || 0,
-        modulesCompletes: completedIds.size,
-        motCount: totalMots,
-        progression: Math.round((completedIds.size / Math.max(allModules?.length || 1, 1)) * 100)
-      })
-
-    } catch (error) {
-      console.error('Erreur chargement dashboard:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const firstName = profile?.full_name?.split(' ')[0] || 'Candidat'
-
-  const S = {
-    fontSize: '11px',
-    fontWeight: 600,
-    letterSpacing: '0.15em',
-    textTransform: 'uppercase' as const,
-    color: 'var(--color-muted)',
-    marginBottom: '16px'
-  }
-
-  const getActivityIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'check_circle': return Icons.checkCircle
-      case 'task_alt': return Icons.taskAlt
-      case 'edit': return Icons.edit
-      default: return Icons.edit
-    }
+  if (loading || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-[var(--color-primary)] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Chargement de ton tableau de bord...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <AppLayout>
-      <header style={{ padding: '32px 40px', borderBottom: '1px solid var(--color-muted)', backgroundColor: 'var(--color-background)' }}>
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '36px', fontWeight: 500, color: 'var(--color-text)', margin: 0 }}>
-          Bonjour, {firstName}
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--color-muted)', marginTop: '6px' }}>
-          Voici un résumé de votre préparation institutionnelle aujourd'hui.
-        </p>
-      </header>
-
-      <div style={{ flex: 1, padding: '40px', display: 'flex', gap: '40px', overflowY: 'auto' }}>
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '32px', minWidth: 0 }}>
+    <div className="min-h-screen bg-[var(--color-background)] pb-12">
+      {/* Header */}
+      <div className="border-b border-[var(--color-muted)]/20 bg-white/70 backdrop-blur-lg sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-heading font-semibold">
+              Bonjour {profile.first_name} 👋
+            </h1>
+            <p className="text-[var(--color-muted)]">Prêt à progresser aujourd’hui ?</p>
+          </div>
           
-          {/* Prochaine Étape */}
-          <section>
-            <h3 style={S}>Prochaine Étape</h3>
-            {loading ? (
-              <div className="skeleton" style={{ height: '140px', borderRadius: '2px' }} />
-            ) : nextModule ? (
-              <div style={{
-                backgroundColor: 'var(--color-surface)',
-                border: '1px solid var(--color-muted)',
-                borderRadius: '2px',
-                padding: '24px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: '24px'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ backgroundColor: 'var(--color-hover-blue)', color: 'var(--color-primary)', border: '1px solid rgba(0,51,204,0.2)', fontSize: '11px', fontWeight: 600, padding: '3px 8px' }}>
-                      {nextModule.categorie}
-                    </span>
-                    <span style={{ fontSize: '13px', color: 'var(--color-muted)' }}>{nextModule.duree_minutes} min</span>
-                  </div>
-                  <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '24px', color: 'var(--color-text)', margin: '0 0 8px' }}>
-                    {nextModule.titre}
-                  </h4>
-                </div>
-                <Link href="/bibliotheque">
-                  <button style={{
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '2px',
-                    padding: '12px 24px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-body)'
-                  }}>
-                    Commencer
-                  </button>
-                </Link>
-              </div>
-            ) : (
-              <div style={{ padding: '24px', border: '1px solid var(--color-muted)', borderRadius: '2px', color: 'var(--color-muted)', fontSize: '14px' }}>
-                Félicitations ! Vous avez terminé tous les modules.
-              </div>
-            )}
-          </section>
+          <div className="flex items-center gap-4">
+            <Link href="/profil">
+              <Button variant="outline" className="rounded-2xl">
+                Mon profil
+              </Button>
+            </Link>
+            <Link href="/coach-oral">
+              <Button className="rounded-2xl bg-[var(--color-primary)]">Coach Oral</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
 
-          {/* Activité Récente */}
-          <section>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 style={{ ...S, margin: 0 }}>Activité Récente</h3>
-              <Link href="/corrections" style={{ color: 'var(--color-primary)', fontSize: '13px', textDecoration: 'none' }}>
-                Voir tout →
+      <div className="max-w-7xl mx-auto px-8 pt-10">
+        {/* Welcome Banner */}
+        {welcome && (
+          <div className="mb-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-3xl p-8 flex items-center gap-6 shadow-xl">
+            <div className="text-5xl">🎉</div>
+            <div>
+              <h2 className="text-2xl font-semibold">Bienvenue dans ton parcours personnalisé !</h2>
+              <p className="opacity-90">Nous avons préparé un plan adapté à tes objectifs et ton niveau.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Radar de Compétences - Colonne principale */}
+          <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-[var(--color-muted)]/20">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-heading font-semibold">Ton Radar de Compétences</h2>
+              <Link href="/radar" className="text-[var(--color-primary)] hover:underline text-sm font-medium">
+                Voir le détail →
               </Link>
             </div>
-
-            <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-muted)', borderRadius: '2px' }}>
-              {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: '72px', margin: '1px 0' }} />
-                ))
-              ) : activities.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-muted)' }}>
-                  Aucune activité récente.
-                </div>
-              ) : (
-                activities.map((act, i) => {
-                  const IconComponent = getActivityIcon(act.icon)
-                  return (
-                    <div key={act.id} style={{
-                      padding: '18px 20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      borderBottom: i < activities.length - 1 ? '1px solid var(--color-muted)' : 'none'
-                    }}>
-                      <div style={{
-                        width: '44px',
-                        height: '44px',
-                        backgroundColor: 'var(--color-hover-blue)',
-                        border: '1px solid var(--color-muted)',
-                        borderRadius: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <IconComponent size={22} strokeWidth={2.5} style={{ color: 'var(--color-primary)' }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{act.titre}</div>
-                        <div style={{ fontSize: '13px', color: 'var(--color-muted)', marginTop: '2px' }}>{act.detail}</div>
-                      </div>
-                      <div style={{ fontSize: '13px', color: 'var(--color-muted)' }}>{act.date}</div>
-                    </div>
-                  )
-                })
-              )}
+            
+            <div className="h-80 flex items-center justify-center border-2 border-dashed border-[var(--color-muted)] rounded-2xl">
+              <div className="text-center">
+                <p className="text-[var(--color-muted)]">Composant Radar CECRL à intégrer ici</p>
+                <p className="text-sm mt-2">(SVG interactif ou graphique)</p>
+              </div>
             </div>
-          </section>
+          </div>
+
+          {/* Prochaines actions & Streak */}
+          <div className="lg:col-span-5 space-y-8">
+            {/* Streak Card */}
+            <div className="bg-white rounded-3xl p-8 border border-[var(--color-muted)]/20">
+              <div className="flex items-center gap-4">
+                <div className="text-4xl">🔥</div>
+                <div>
+                  <div className="text-5xl font-heading font-semibold text-orange-500">7</div>
+                  <p className="text-sm text-[var(--color-muted)]">jours de streak</p>
+                </div>
+              </div>
+              <p className="mt-6 text-sm">Ne perds pas ta dynamique ! Reviens demain pour maintenir ta série.</p>
+            </div>
+
+            {/* Prochaine activité recommandée */}
+            <div className="bg-white rounded-3xl p-8 border border-[var(--color-muted)]/20">
+              <h3 className="font-semibold mb-4 text-lg">🎯 Prochaine séance recommandée</h3>
+              <div className="p-5 bg-[var(--color-background)] rounded-2xl">
+                <p className="font-medium">Expression écrite - Sujet : Lettre formelle</p>
+                <p className="text-sm text-[var(--color-muted)] mt-1">15-20 minutes • Niveau B1</p>
+              </div>
+              <Link href="/ecriture">
+                <Button className="w-full mt-6 rounded-2xl py-6">Commencer maintenant</Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Access */}
+          <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <Link href="/ecriture" className="group">
+              <div className="bg-white hover:bg-[var(--color-primary)] hover:text-white transition-all rounded-3xl p-8 border border-[var(--color-muted)]/20 h-full">
+                <div className="text-4xl mb-4">✍️</div>
+                <h4 className="font-semibold text-xl">Expression Écrite</h4>
+                <p className="text-sm opacity-70 mt-2">Corrections IA notées</p>
+              </div>
+            </Link>
+
+            <Link href="/coach-oral" className="group">
+              <div className="bg-white hover:bg-[var(--color-primary)] hover:text-white transition-all rounded-3xl p-8 border border-[var(--color-muted)]/20 h-full">
+                <div className="text-4xl mb-4">🎤</div>
+                <h4 className="font-semibold text-xl">Coach Oral</h4>
+                <p className="text-sm opacity-70 mt-2">Entraînement conversation</p>
+              </div>
+            </Link>
+
+            <Link href="/bibliotheque" className="group">
+              <div className="bg-white hover:bg-[var(--color-primary)] hover:text-white transition-all rounded-3xl p-8 border border-[var(--color-muted)]/20 h-full">
+                <div className="text-4xl mb-4">📚</div>
+                <h4 className="font-semibold text-xl">Bibliothèque</h4>
+                <p className="text-sm opacity-70 mt-2">Modules &amp; exercices</p>
+              </div>
+            </Link>
+
+            <Link href="/exercices" className="group">
+              <div className="bg-white hover:bg-[var(--color-primary)] hover:text-white transition-all rounded-3xl p-8 border border-[var(--color-muted)]/20 h-full">
+                <div className="text-4xl mb-4">⚡</div>
+                <h4 className="font-semibold text-xl">Exercices rapides</h4>
+                <p className="text-sm opacity-70 mt-2">Entraînement intensif</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Dernières corrections */}
+          <div className="lg:col-span-12 mt-6">
+            <h3 className="font-semibold text-xl mb-6">Dernières corrections</h3>
+            <div className="bg-white rounded-3xl p-8 border border-[var(--color-muted)]/20">
+              <p className="text-[var(--color-muted)] text-center py-12">
+                Aucune correction récente. Commence une nouvelle rédaction pour voir tes progrès ici.
+              </p>
+            </div>
+          </div>
         </div>
-
-        {/* Colonne de droite */}
-        <aside style={{ flex: '0 0 320px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-
-          {/* === ÉVALUATION GLOBALE - NOUVELLE VERSION === */}
-          <section>
-            <h3 style={S}>Évaluation Globale</h3>
-            <div style={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-muted)',
-              borderRadius: '2px',
-              padding: '32px 28px',
-              textAlign: 'center'
-            }}>
-              {levelLoading || loading ? (
-                <div className="skeleton" style={{ height: '260px' }} />
-              ) : userLevel ? (
-                <>
-                  <div style={{ fontSize: '13px', color: 'var(--color-muted)', marginBottom: '12px' }}>
-                    NIVEAU GLOBAL • Mis à jour le {new Date(userLevel.last_updated).toLocaleDateString('fr-FR')}
-                  </div>
-
-                  <div style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '78px',
-                    fontWeight: 600,
-                    lineHeight: 1,
-                    color: 'var(--color-primary)',
-                    marginBottom: '8px'
-                  }}>
-                    {userLevel.global_level}
-                  </div>
-
-                  <div style={{ fontSize: '19px', color: 'var(--color-text)', marginBottom: '28px' }}>
-                    {userLevel.global_score} <span style={{ fontSize: '15px', color: 'var(--color-muted)' }}>/ 100</span>
-                  </div>
-
-                  {/* Sous-scores */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>ÉCRIT</div>
-                      <div style={{ fontSize: '26px', fontWeight: 600 }}>{userLevel.writing_score}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>VOLTAIRE</div>
-                      <div style={{ fontSize: '26px', fontWeight: 600 }}>{userLevel.voltaire_score}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-muted)' }}>ORAL</div>
-                      <div style={{ fontSize: '26px', fontWeight: 600 }}>{userLevel.speaking_score}</div>
-                    </div>
-                  </div>
-
-                  {/* Forces & Faiblesses */}
-                  {(userLevel.strengths?.length || userLevel.weaknesses?.length) ? (
-                    <div style={{ marginTop: '32px', textAlign: 'left', fontSize: '13.5px', borderTop: '1px solid var(--color-muted)', paddingTop: '24px' }}>
-                      {userLevel.strengths && userLevel.strengths.length > 0 && (
-                        <div style={{ marginBottom: '12px' }}>
-                          <strong>Forces :</strong> {userLevel.strengths.join(', ')}
-                        </div>
-                      )}
-                      {userLevel.weaknesses && userLevel.weaknesses.length > 0 && (
-                        <div style={{ color: '#e11d48' }}>
-                          <strong>Axes d’amélioration :</strong> {userLevel.weaknesses.join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div style={{ padding: '60px 20px', color: 'var(--color-muted)' }}>
-                  Commencez vos premières évaluations pour obtenir votre niveau global.
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Statistiques Rapides */}
-          <section>
-            <h3 style={S}>Statistiques Rapides</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-muted)', borderRadius: '2px', padding: '20px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--color-muted)', marginBottom: '8px' }}>MOTS RÉDIGÉS</div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '32px', fontWeight: 500 }}>
-                  {stats.motCount.toLocaleString('fr-FR')}
-                </div>
-              </div>
-              <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-muted)', borderRadius: '2px', padding: '20px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--color-muted)', marginBottom: '8px' }}>PROGRESSION</div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '32px', fontWeight: 500 }}>
-                  {stats.progression}%
-                </div>
-              </div>
-            </div>
-          </section>
-        </aside>
       </div>
-    </AppLayout>
-  )
+    </div>
+  );
 }
