@@ -69,16 +69,16 @@ export default function EcritureClient() {
       let recommended = promptsData[0]
 
       if (history && history.length > 0) {
-        const sectionACount = history.filter(h => h.titre.includes('SECTION A') || h.titre.includes('Sujet A')).length
+        const sectionACount = history.filter((h: { titre: string }) => h.titre.includes('SECTION A') || h.titre.includes('Sujet A')).length
         const sectionBCount = history.length - sectionACount
 
         // Priorité à la section la moins travaillée
         if (selectedSection === 'ALL') {
           if (sectionBCount < sectionACount) {
-            const sectionBPrompts = promptsData.filter(p => p.section.includes('B'))
+            const sectionBPrompts = promptsData.filter((p: EcriturePrompt) => p.section.includes('B'))
             if (sectionBPrompts.length > 0) recommended = sectionBPrompts[Math.floor(Math.random() * sectionBPrompts.length)]
           } else {
-            const sectionAPrompts = promptsData.filter(p => p.section.includes('A'))
+            const sectionAPrompts = promptsData.filter((p: EcriturePrompt) => p.section.includes('A'))
             if (sectionAPrompts.length > 0) recommended = sectionAPrompts[Math.floor(Math.random() * sectionAPrompts.length)]
           }
         }

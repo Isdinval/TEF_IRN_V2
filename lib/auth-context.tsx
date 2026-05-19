@@ -23,12 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session); setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
       setSession(session); setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id); else setProfile(null)
       setLoading(false)
@@ -41,7 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error }
   }
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
+    const emailRedirectTo = process.env.NEXT_PUBLIC_SITE_URL
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
+      },
+    })
     return { error }
   }
   const signOut = async () => { await supabase.auth.signOut() }
