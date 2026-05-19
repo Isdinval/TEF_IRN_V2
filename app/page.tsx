@@ -8,17 +8,25 @@ import { Icons } from '@/components/layout/ui/icons';
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Animated Counters
-  const AnimatedCounter = ({ end, suffix = '' }: { end: number; suffix?: string }) => {
+  // Animated Counter corrigé
+  const AnimatedCounter = ({ end, suffix = "" }: { end: number; suffix?: string }) => {
     const count = useMotionValue(0);
-    const rounded = useTransform(count, Math.round);
+    const rounded = useTransform(count, (latest) => Math.round(latest));
 
     useEffect(() => {
-      const controls = animate(count, end, { duration: 2.5, ease: "easeOut" });
+      const controls = animate(count, end, { 
+        duration: 2.2, 
+        ease: "easeOut" 
+      });
       return () => controls.stop();
-    }, [end]);
+    }, [end, count]);
 
-    return <motion.span>{rounded}{suffix}</motion.span>;
+    return (
+      <motion.span>
+        {rounded}
+        {suffix}
+      </motion.span>
+    );
   };
 
   const faqs = [
@@ -28,11 +36,11 @@ export default function Home() {
     },
     {
       q: "Est-ce que le coach oral remplace vraiment un professeur humain ?",
-      a: "Il ne le remplace pas, il le complète. Le coach IA est disponible 24/7, sans rendez-vous, et corrige prononciation + fluidité en temps réel. Beaucoup de nos élèves le préfèrent pour l'entraînement intensif."
+      a: "Il ne le remplace pas, il le complète. Le coach IA est disponible 24/7, sans rendez-vous, et corrige prononciation + fluidité en temps réel."
     },
     {
       q: "La correction IA est-elle aussi précise qu'un correcteur officiel ?",
-      a: "Oui. Nous avons calibré le modèle sur des milliers de copies réelles du TEF IRN. Elle attribue une note sur 500 exactement comme l’examen officiel, avec annotations inline."
+      a: "Oui. Nous avons calibré le modèle sur des milliers de copies réelles du TEF IRN. Elle attribue une note sur 500 exactement comme l’examen officiel."
     },
     {
       q: "Que se passe-t-il si je ne progresse pas ?",
@@ -46,7 +54,7 @@ export default function Home() {
 
   return (
     <div className="landing-page min-h-screen overflow-x-hidden bg-[var(--color-background)] text-[var(--color-text)] font-body">
-      {/* Navigation identique à avant... (je l'ai gardée courte pour la lisibilité) */}
+      {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-[var(--color-muted)]/20 bg-[var(--color-surface)]/95 backdrop-blur-2xl">
         <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -68,7 +76,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero (inchangé mais avec plus d'animation) */}
+      {/* Hero */}
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(at_50%_30%,var(--color-primary)/0.08,transparent_70%)]"></div>
         
@@ -79,34 +87,35 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/30 bg-white/70 px-5 py-2 text-sm font-medium mb-6"
             >
-              Places limitées – Session juin 2026
+              Places limitées — Session juin 2026
             </motion.div>
 
             <h1 className="text-6xl md:text-7xl font-heading font-semibold leading-[1.05] tracking-tighter mb-8">
-              Transformez votre <span className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">stress en fierté</span>.
+              Votre rêve français mérite une préparation d’exception.
             </h1>
 
             <p className="text-2xl md:text-3xl text-[var(--color-muted)] max-w-3xl mx-auto leading-tight mb-10">
-              La préparation TEF IRN la plus intelligente et humaine jamais créée.
+              Passez du stress du TEF IRN à la fierté d’avoir réussi.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth" className="group px-10 py-5 rounded-3xl bg-[var(--color-primary)] text-white font-semibold text-xl hover:scale-105 transition-all">
-                Démarrer l’essai gratuit de 14 jours →
-              </Link>
-            </div>
+            <Link 
+              href="/auth"
+              className="inline-block px-10 py-5 rounded-3xl bg-[var(--color-primary)] text-white font-semibold text-xl hover:scale-105 transition-all shadow-xl"
+            >
+              Démarrer l’essai gratuit de 14 jours →
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Stats avec compteurs animés */}
+      {/* Stats avec compteurs */}
       <section className="py-12 border-y border-[var(--color-muted)]/10 bg-white/50">
         <div className="mx-auto max-w-5xl px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { end: 3450, label: "Apprenants accompagnés", suffix: "+" },
             { end: 92, label: "Taux de réussite", suffix: "%" },
             { end: 18, label: "Progression moyenne", suffix: "%" },
-            { end: 498, label: "Note moyenne de satisfaction", suffix: "/500" },
+            { end: 4.98, label: "Satisfaction", suffix: "/5" },
           ].map((stat, i) => (
             <motion.div 
               key={i}
@@ -129,56 +138,43 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-5xl font-heading font-semibold mb-6">Visualisez vos progrès en un coup d’œil</h2>
-              <p className="text-xl text-[var(--color-muted)]">Le radar de compétences CECRL met à jour votre niveau en temps réel sur les 4 compétences évaluées au TEF IRN.</p>
-              <ul className="mt-8 space-y-4 text-lg">
-                <li>Expression écrite • Compréhension écrite</li>
-                <li>Expression orale • Compréhension orale</li>
-              </ul>
+              <h2 className="text-5xl font-heading font-semibold mb-6">Visualisez vos progrès en temps réel</h2>
+              <p className="text-xl text-[var(--color-muted)]">Le radar de compétences met à jour automatiquement votre niveau sur les 4 compétences du TEF IRN.</p>
             </div>
 
-            <div className="relative flex justify-center">
-              <motion.div 
-                initial={{ rotate: -8, scale: 0.9 }}
-                whileInView={{ rotate: 0, scale: 1 }}
-                viewport={{ once: true }}
-                className="relative w-80 h-80"
-              >
+            <motion.div 
+              initial={{ scale: 0.85, rotate: -5 }}
+              whileInView={{ scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              className="relative flex justify-center"
+            >
+              <div className="relative w-80 h-80">
                 <svg viewBox="0 0 400 400" className="w-full h-full drop-shadow-2xl">
-                  {/* Fond radar */}
-                  <circle cx="200" cy="200" r="160" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
-                  <circle cx="200" cy="200" r="110" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
-                  <circle cx="200" cy="200" r="60" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
+                  <circle cx="200" cy="200" r="160" fill="none" stroke="#e5e7eb" strokeWidth="12"/>
+                  <circle cx="200" cy="200" r="110" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
+                  <circle cx="200" cy="200" r="60" fill="none" stroke="#e5e7eb" strokeWidth="8"/>
                   
-                  {/* Axes */}
-                  <line x1="40" y1="200" x2="360" y2="200" stroke="#e5e7eb" strokeWidth="1"/>
-                  <line x1="200" y1="40" x2="200" y2="360" stroke="#e5e7eb" strokeWidth="1"/>
-                  
-                  {/* Niveau simulé */}
                   <motion.polygon 
-                    points="200,80 280,160 250,280 140,270 100,170"
+                    points="200,80 290,150 260,290 130,280 90,170" 
                     fill="rgba(139, 92, 246, 0.25)"
-                    stroke="var(--color-primary)"
-                    strokeWidth="8"
+                    stroke="#8b5cf6"
+                    strokeWidth="18"
                     strokeLinejoin="round"
-                    initial={{ opacity: 0.6 }}
-                    animate={{ opacity: [0.6, 0.9, 0.6] }}
-                    transition={{ duration: 4, repeat: Infinity }}
+                    animate={{ opacity: [0.6, 0.95, 0.6] }}
+                    transition={{ duration: 3.5, repeat: Infinity }}
                   />
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-6xl font-heading font-bold text-[var(--color-primary)]">B1</div>
-                    <div className="text-sm uppercase tracking-widest">Niveau actuel</div>
+                <div className="absolute inset-0 flex items-center justify-center text-center">
+                  <div>
+                    <div className="text-7xl font-heading font-bold text-[var(--color-primary)]">B1</div>
+                    <div className="text-sm tracking-widest uppercase">Niveau actuel</div>
                   </div>
                 </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
-
-      {/* Autres sections (Storytelling, Features, Témoignages, Garantie, Pricing) restent identiques à la version précédente. Je les ai gardées pour ne pas alourdir le message. */}
 
       {/* FAQ */}
       <section className="py-28 bg-white">
@@ -196,14 +192,14 @@ export default function Home() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full px-8 py-6 flex justify-between items-center text-left font-medium text-lg hover:bg-[var(--color-muted)]/5 transition"
+                  className="w-full px-8 py-6 flex justify-between items-center text-left font-medium text-lg hover:bg-gray-50 transition"
                 >
                   {faq.q}
-                  <span className={`transition ${openFaq === index ? 'rotate-180' : ''}`}>↓</span>
+                  <span className={`transition-transform ${openFaq === index ? 'rotate-180' : ''}`}>↓</span>
                 </button>
                 <motion.div
                   initial={false}
-                  animate={{ height: openFaq === index ? "auto" : 0, opacity: openFaq === index ? 1 : 0 }}
+                  animate={{ height: openFaq === index ? "auto" : 0 }}
                   className="overflow-hidden"
                 >
                   <div className="px-8 pb-8 text-[var(--color-muted)] leading-relaxed">
@@ -217,17 +213,20 @@ export default function Home() {
       </section>
 
       {/* Dernier CTA */}
-      <section className="py-28 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white">
-        <div className="max-w-3xl mx-auto text-center px-6">
-          <h2 className="text-5xl font-heading font-semibold mb-8">Prêt à changer votre avenir ?</h2>
-          <Link href="/auth" className="inline-block px-16 py-7 rounded-3xl bg-white text-[var(--color-primary)] font-semibold text-2xl hover:scale-105 transition-all">
-            Commencer gratuitement → 14 jours
+      <section className="py-28 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white text-center">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-5xl font-heading font-semibold mb-8">Prêt à réussir votre TEF IRN ?</h2>
+          <Link 
+            href="/auth" 
+            className="inline-block px-14 py-7 rounded-3xl bg-white text-[var(--color-primary)] font-semibold text-2xl hover:scale-105 transition-all shadow-2xl"
+          >
+            Commencer gratuitement — 14 jours
           </Link>
         </div>
       </section>
 
-      <footer className="bg-[var(--color-surface)] py-12 border-t text-center text-sm text-[var(--color-muted)]">
-        © 2026 L&apos;Académie Moderne — Préparation intelligente au TEF IRN
+      <footer className="bg-[var(--color-surface)] py-12 text-center text-sm text-[var(--color-muted)]">
+        © 2026 L&apos;Académie Moderne — Préparation TEF IRN avec IA
       </footer>
     </div>
   );
