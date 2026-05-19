@@ -172,7 +172,10 @@ export default function ExercicesPage() {
                 Recommencer
               </button>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  if (typeof window !== 'undefined') window.localStorage.setItem('competences_updated', '1')
+                  router.push('/dashboard?competences=updated')
+                }}
                 style={{ 
                   backgroundColor: 'transparent', 
                   color: 'var(--color-text)', 
@@ -210,7 +213,10 @@ export default function ExercicesPage() {
         flexShrink: 0,
       }}>
         <button
-          onClick={() => router.push('/dashboard')}
+          onClick={() => {
+                  if (typeof window !== 'undefined') window.localStorage.setItem('competences_updated', '1')
+                  router.push('/dashboard?competences=updated')
+                }}
           style={{ 
             display: 'flex', 
             alignItems: 'center', 

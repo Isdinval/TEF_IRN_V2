@@ -161,6 +161,7 @@ export default function CoachOralPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'oral', user_id: user.id, messages }),
         })
+        if (typeof window !== 'undefined') window.localStorage.setItem('competences_updated', '1')
       }
     }
     setMessages([])

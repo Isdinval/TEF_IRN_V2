@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [streakDays, setStreakDays] = useState(0);
   const [competences, setCompetences] = useState<Competences | null>(null);
   const [recentCorrections, setRecentCorrections] = useState<CorrectionPreview[]>([]);
+  const [competencesUpdated, setCompetencesUpdated] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
@@ -68,6 +69,15 @@ export default function Dashboard() {
         )
       );
       setStreakDays(days.size);
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('competences') === 'updated' || window.localStorage.getItem('competences_updated') === '1') {
+          setCompetencesUpdated(true);
+          window.localStorage.removeItem('competences_updated');
+          setTimeout(() => setCompetencesUpdated(false), 6000);
+        }
+      }
 
       if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('welcome') === 'true') {
         setWelcome(true);
@@ -148,6 +158,12 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 pt-10">
+        {competencesUpdated && (
+          <div className="mb-6 bg-blue-600 text-white rounded-2xl px-6 py-4">
+            ✅ Compétences mises à jour à partir de votre dernière activité.
+          </div>
+        )}
+
         {welcome && (
           <div className="mb-10 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-3xl p-8 flex items-center gap-6 shadow-xl">
             <div className="text-5xl">🎉</div>
