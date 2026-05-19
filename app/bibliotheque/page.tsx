@@ -37,7 +37,7 @@ export default function Bibliotheque() {
 
     setModules(modulesData || [])
     const progressMap = new Map<string, UserModuleProgress>()
-    progressData?.forEach(p => progressMap.set(p.module_id, p))
+    progressData?.forEach((p: UserModuleProgress) => progressMap.set(p.module_id, p))
     setProgress(progressMap)
     setLoading(false)
   }

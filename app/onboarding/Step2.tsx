@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/layout/ui/button';
 import { Calendar } from '@/components/layout/ui/calendar';
-import { format } from 'date-fns';
 
 export default function OnboardingStep2({ data, updateData, next, prev }: any) {
   const goals = [
