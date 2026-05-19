@@ -183,6 +183,11 @@ export default function EcritureClient() {
   if (!currentPrompt) return <AppLayout><div>Aucun sujet disponible.</div></AppLayout>
 
   const motColor = motCount > currentPrompt.mots_max ? 'var(--color-accent)' : 'var(--color-text)'
+  const checklist = [
+    { label: 'Longueur minimale atteinte', ok: motCount >= currentPrompt.mots_min },
+    { label: 'Longueur maximale respectée', ok: motCount <= currentPrompt.mots_max },
+    { label: 'Au moins 3 phrases', ok: texte.split(/[.!?]/).filter((x) => x.trim().length > 0).length >= 3 },
+  ]
 
   return (
     <AppLayout>
@@ -251,6 +256,17 @@ export default function EcritureClient() {
                 ))}
               </ul>
             </div>
+
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--color-muted)', paddingTop: '16px' }}>
+              <p style={{ fontWeight: 600, marginBottom: '10px' }}>Checklist avant soumission</p>
+              <ul style={{ paddingLeft: '18px', lineHeight: 1.7 }}>
+                {checklist.map((item) => (
+                  <li key={item.label} style={{ color: item.ok ? '#059669' : 'var(--color-muted)' }}>
+                    {item.ok ? '✓' : '•'} {item.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </aside>
 
           {/* Zone d'écriture */}
@@ -285,7 +301,7 @@ export default function EcritureClient() {
               justifyContent: 'space-between' 
             }}>
               <div style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
-                Auto-sauvegarde toutes les 30s {lastSaved && `— ${lastSaved}`}
+                Auto-sauvegarde toutes les 30s — {lastSaved ? `Dernière sauvegarde à ${lastSaved}` : 'Non sauvegardé'}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
