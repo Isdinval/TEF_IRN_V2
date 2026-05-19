@@ -15,7 +15,8 @@ export default function AuthPage() {
 
   const router = useRouter();
   const supabase = createClient();
-  const emailRedirectTo = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const emailRedirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
 
   // Redirection après auth
   useEffect(() => {
