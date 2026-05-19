@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/layout/ui/button';
+import { Input } from '@/components/layout/ui/input';
 
 export default function OnboardingStep1({ data, updateData, next }: any) {
   return (
