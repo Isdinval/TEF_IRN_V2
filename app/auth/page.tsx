@@ -15,6 +15,7 @@ export default function AuthPage() {
 
   const router = useRouter();
   const supabase = createClient();
+  const emailRedirectTo = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : undefined);
 
   // Redirection après auth
   useEffect(() => {
@@ -61,7 +62,8 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            data: { first_name: firstName }
+            data: { first_name: firstName },
+            emailRedirectTo,
           }
         });
         if (error) throw error;
