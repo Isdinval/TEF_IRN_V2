@@ -278,6 +278,6 @@ export async function recalculerCompetencesDepuisHistorique(userId: string): Pro
   }
 
   // Relire les compétences finales
-  const { data: final } = await getCompetencesActuelles(userId)
+  const final = await getCompetencesActuelles(userId)
   return final.data ?? competences
 }
