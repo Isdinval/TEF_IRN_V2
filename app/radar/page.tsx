@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState } from 'react'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Competences } from '@/lib/supabase'
 import { calculateNiveauEstime } from '@/lib/niveau-utils'
-import { Icons } from '@/components/layout/ui/icons'
+import { AppPage, AppPanel, PageErrorState } from '@/components/ui/app-page'
 
 const AXES = [
   { key: 'lexique', label: 'Lexique' },
@@ -18,318 +19,122 @@ const AXES = [
 
 type AxeKey = typeof AXES[number]['key']
 
-function polarToCartesian(cx: number, cy: number, r: number, angleIndex: number, total: number) {
+const polarToCartesian = (cx: number, cy: number, r: number, angleIndex: number, total: number) => {
   const angle = (Math.PI * 2 * angleIndex) / total - Math.PI / 2
-  return {
-    x: cx + r * Math.cos(angle),
-    y: cy + r * Math.sin(angle),
-  }
+  return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) }
 }
 
-function radarPolygon(values: number[], cx: number, cy: number, maxR: number, maxVal: number) {
-  return values.map((v, i) => {
-    const r = (v / maxVal) * maxR
-    const pt = polarToCartesian(cx, cy, r, i, values.length)
-    return `${pt.x},${pt.y}`
-  }).join(' ')
-}
+const radarPolygon = (values: number[], cx: number, cy: number, maxR: number, maxVal: number) => values.map((v, i) => {
+  const pt = polarToCartesian(cx, cy, (v / maxVal) * maxR, i, values.length)
+  return `${pt.x},${pt.y}`
+}).join(' ')
 
-function gridPolygon(cx: number, cy: number, r: number, n: number) {
-  return Array.from({ length: n }, (_, i) => {
-    const pt = polarToCartesian(cx, cy, r, i, n)
-    return `${pt.x},${pt.y}`
-  }).join(' ')
-}
-
-const INSIGHTS = [
-  {
-    type: 'warning' as const,
-    titre: 'Réviser le subjonctif présent',
-    texte: 'Faiblesse détectée en Syntaxe lors des 3 dernières rédactions. Confusion fréquente avec l\'indicatif.',
-    cta: 'S\'entraîner',
-    href: '/exercices',
-    accent: true,
-  },
-  {
-    type: 'positive' as const,
-    titre: 'Amélioration du Lexique',
-    texte: 'Utilisation accrue de connecteurs logiques complexes. Continuez à diversifier vos adverbes.',
-    cta: 'Voir Module',
-    href: '/bibliotheque',
-    accent: false,
-  },
-  {
-    type: 'action' as const,
-    titre: 'Évaluation Blanche Requise',
-    texte: 'Vos métriques de fluidité sont stables. Il est temps de passer une épreuve complète pour valider le niveau B1.',
-    cta: 'Débuter l\'Épreuve',
-    href: '/ecriture',
-    accent: false,
-    primary: true,
-  },
-]
+const gridPolygon = (cx: number, cy: number, r: number, n: number) => Array.from({ length: n }, (_, i) => {
+  const pt = polarToCartesian(cx, cy, r, i, n)
+  return `${pt.x},${pt.y}`
+}).join(' ')
 
 export default function RadarPage() {
   const { user } = useAuth()
-  const [competences, setCompetences] = useState<Competences>({
-    lexique: 75,
-    syntaxe: 55,
-    cohesion: 62,
-    orthographe: 48,
-    comprehension: 70,
-    fluidite: 65,
-  })
+  const [competences, setCompetences] = useState<Competences | null>(null)
   const [loading, setLoading] = useState(true)
-  const [niveauEstime, setNiveauEstime] = useState<string>('B1')
-  const [progression, setProgression] = useState('+15%')
-  const [updatedNotice, setUpdatedNotice] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user) return
-    loadData()
-    if (typeof window !== 'undefined' && window.localStorage.getItem('competences_updated') === '1') {
-      setUpdatedNotice(true)
-      window.localStorage.removeItem('competences_updated')
-      setTimeout(() => setUpdatedNotice(false), 6000)
+    setLoading(true)
+    setError(null)
+    const { data, error: fetchError } = await supabase.from('competences').select('*').eq('user_id', user.id).single()
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      setError('Impossible de charger le radar pour le moment.')
+      setLoading(false)
+      return
     }
+    setCompetences(data ?? null)
+    setLoading(false)
   }, [user])
 
-  const loadData = async () => {
-    const { data } = await supabase
-      .from('competences')
-      .select('*')
-      .eq('user_id', user!.id)
-      .single()
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
-    if (data) {
-      setCompetences({
-        lexique: data.lexique,
-        syntaxe: data.syntaxe,
-        cohesion: data.cohesion,
-        orthographe: data.orthographe,
-        comprehension: data.comprehension,
-        fluidite: data.fluidite,
-      })
-    } else {
-      // Create default competences
-      await supabase.from('competences').insert({
-        user_id: user!.id,
-        lexique: 75,
-        syntaxe: 55,
-        cohesion: 62,
-        orthographe: 48,
-        comprehension: 70,
-        fluidite: 65,
-      })
-    }
-    setLoading(false)
-  }
+  const values = useMemo(() => AXES.map((a) => competences?.[a.key as AxeKey] ?? 0), [competences])
+  const weakest = useMemo(() => competences ? AXES.map((a) => ({ ...a, value: competences[a.key as AxeKey] })).sort((a, b) => a.value - b.value)[0] : null, [competences])
+  const strongest = useMemo(() => competences ? AXES.map((a) => ({ ...a, value: competences[a.key as AxeKey] })).sort((a, b) => b.value - a.value)[0] : null, [competences])
 
+  const niveauEstime = competences ? calculateNiveauEstime(competences) : '-'
   const CX = 200
   const CY = 200
   const MAX_R = 140
-  const N = AXES.length
-  const values = AXES.map(a => competences[a.key])
-  const RINGS = [25, 50, 75, 100]
 
   return (
     <AppLayout>
-      {/* Header */}
-      <header style={{ padding: '32px 40px', borderBottom: '1px solid var(--color-muted)', backgroundColor: 'var(--color-background)' }}>
-        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '36px', fontWeight: 500, color: 'var(--color-text)', margin: 0 }}>
-          Radar de compétences
-        </h2>
-        <p style={{ fontSize: '14px', color: 'var(--color-muted)', marginTop: '6px' }}>
-          Analyse détaillée des compétences CECRL (A1–B1) basée sur vos récentes évaluations institutionnelles.
-        </p>
-      </header>
+      <AppPage>
+        <AppPanel className="p-6">
+          <h1 className="text-3xl font-semibold">Radar de compétences</h1>
+          <p className="mt-1 text-[var(--color-muted)]">Visualisez vos forces, vos priorités, et votre niveau estimé pour guider votre prochain entraînement.</p>
+        </AppPanel>
 
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-        {updatedNotice && (
-          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#DBEAFE', color: '#1E3A8A', border: '1px solid #93C5FD' }}>
-            Compétences mises à jour suite à votre activité récente.
-          </div>
+        {error ? (
+          <PageErrorState title="Erreur radar" message={error} onRetry={loadData} />
+        ) : (
+          <section className="grid gap-6 xl:grid-cols-12">
+            <AppPanel className="p-6 xl:col-span-8">
+              <div className="mb-6 flex flex-wrap justify-between gap-3">
+                <div>
+                  <p className="text-sm text-[var(--color-muted)]">Niveau estimé</p>
+                  <p className="text-2xl font-semibold">{niveauEstime}</p>
+                </div>
+                <Link href="/exercices" className="text-sm text-[var(--color-primary)]">Lancer un exercice ciblé →</Link>
+              </div>
+
+              {loading ? (
+                <div className="grid h-[420px] place-items-center">Chargement du radar…</div>
+              ) : !competences ? (
+                <div className="grid h-[420px] place-items-center rounded-2xl border border-dashed border-violet-300/70 bg-white/50 text-center text-[var(--color-muted)]">Aucune donnée radar disponible. Réalisez une activité pour initialiser vos compétences.</div>
+              ) : (
+                <div className="flex justify-center">
+                  <svg viewBox="0 0 400 400" width="100%" className="max-w-[460px]">
+                    {[25, 50, 75, 100].map((pct) => (<polygon key={pct} points={gridPolygon(CX, CY, (pct / 100) * MAX_R, AXES.length)} stroke="#A8B0BF" strokeWidth="1" fill="none" opacity="0.45" />))}
+                    {AXES.map((_, i) => {
+                      const end = polarToCartesian(CX, CY, MAX_R, i, AXES.length)
+                      return <line key={i} x1={CX} y1={CY} x2={end.x} y2={end.y} stroke="#A8B0BF" strokeWidth="1" opacity="0.6" />
+                    })}
+                    <polygon points={radarPolygon(values, CX, CY, MAX_R, 100)} fill="#5B21B6" fillOpacity="0.16" stroke="#5B21B6" strokeWidth="2" />
+                    {values.map((v, i) => {
+                      const pt = polarToCartesian(CX, CY, (v / 100) * MAX_R, i, values.length)
+                      return <circle key={i} cx={pt.x} cy={pt.y} r="4" fill="#5B21B6" />
+                    })}
+                    {AXES.map((axis, i) => {
+                      const pt = polarToCartesian(CX, CY, MAX_R + 24, i, AXES.length)
+                      return <text key={i} x={pt.x} y={pt.y} textAnchor="middle" className="fill-slate-700 text-[10px]">{axis.label}</text>
+                    })}
+                  </svg>
+                </div>
+              )}
+            </AppPanel>
+
+            <div className="space-y-4 xl:col-span-4">
+              <InsightCard title="Axe prioritaire" value={weakest ? `${weakest.label} (${weakest.value}%)` : 'En attente'} description="Ciblez cet axe dans votre prochaine session pour maximiser le gain de score." />
+              <InsightCard title="Axe fort" value={strongest ? `${strongest.label} (${strongest.value}%)` : 'En attente'} description="Conservez cet avantage avec des simulations complètes régulières." />
+              <AppPanel className="p-5">
+                <h3 className="font-semibold">Plan d'action immédiat</h3>
+                <p className="mt-2 text-sm text-[var(--color-muted)]">1) Faites un exercice ciblé<br/>2) Relancez une production écrite<br/>3) Vérifiez l'évolution dans le radar</p>
+              </AppPanel>
+            </div>
+          </section>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', maxWidth: '1100px' }}>
-          {/* Left: Chart */}
-          <div style={{
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-muted)',
-            borderRadius: '2px',
-            padding: '32px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            position: 'relative',
-            minHeight: '520px',
-          }}>
-            {/* Chart meta */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '4px' }}>
-                  Profil Évalué
-                </div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '20px', color: 'var(--color-text)' }}>
-                  Niveau Actuel Estimé : {niveauEstime}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: '4px' }}>
-                  Progression (30 jours)
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: 600, color: '#059669' }}>
-                  {progression}
-                </div>
-              </div>
-            </div>
-
-            {/* SVG Radar */}
-            {loading ? (
-              <div className="skeleton" style={{ width: '400px', height: '400px', borderRadius: '50%' }} />
-            ) : (
-              <svg viewBox="0 0 400 400" width="420" height="420" style={{ overflow: 'visible' }}>
-                {/* Grid rings */}
-                {RINGS.map(pct => (
-                  <polygon
-                    key={pct}
-                    points={gridPolygon(CX, CY, (pct / 100) * MAX_R, N)}
-                    stroke="#8E96A4"
-                    strokeWidth="1"
-                    fill="none"
-                    opacity="0.35"
-                  />
-                ))}
-
-                {/* Axis lines */}
-                {AXES.map((_, i) => {
-                  const end = polarToCartesian(CX, CY, MAX_R, i, N)
-                  return (
-                    <line
-                      key={i}
-                      x1={CX} y1={CY}
-                      x2={end.x} y2={end.y}
-                      stroke="#8E96A4"
-                      strokeWidth="1"
-                      opacity="0.5"
-                    />
-                  )
-                })}
-
-                {/* Data polygon */}
-                <polygon
-                  points={radarPolygon(values, CX, CY, MAX_R, 100)}
-                  fill="#0033CC"
-                  fillOpacity="0.12"
-                  stroke="#0033CC"
-                  strokeWidth="2"
-                />
-
-                {/* Data points */}
-                {values.map((v, i) => {
-                  const r = (v / 100) * MAX_R
-                  const pt = polarToCartesian(CX, CY, r, i, N)
-                  return <circle key={i} cx={pt.x} cy={pt.y} r="4" fill="#0033CC" />
-                })}
-
-                {/* Labels */}
-                {AXES.map((axis, i) => {
-                  const pt = polarToCartesian(CX, CY, MAX_R + 28, i, N)
-                  let anchor: 'middle' | 'start' | 'end' = 'middle'
-                  if (pt.x < CX - 10) anchor = 'end'
-                  else if (pt.x > CX + 10) anchor = 'start'
-
-                  return (
-                    <text
-                      key={i}
-                      x={pt.x}
-                      y={pt.y + 4}
-                      textAnchor={anchor}
-                      style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', fill: '#0B132B', fontFamily: 'Albert Sans, sans-serif' }}
-                    >
-                      {axis.label}
-                    </text>
-                  )
-                })}
-              </svg>
-            )}
-
-            {/* Score legend */}
-            <div style={{ display: 'flex', gap: '24px', marginTop: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {AXES.map(axis => (
-                <div key={axis.key} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--color-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
-                    {axis.label}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '18px', color: 'var(--color-primary)' }}>
-                    {competences[axis.key]}%
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Insights */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '22px', color: 'var(--color-text)', borderBottom: '1px solid var(--color-muted)', paddingBottom: '8px', margin: 0 }}>
-              Insights Éditoriaux
-            </h3>
-
-            {INSIGHTS.map((insight, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: `1px solid ${insight.accent ? 'rgba(217,42,42,0.2)' : 'var(--color-muted)'}`,
-                  borderRadius: '2px',
-                  padding: '20px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {insight.accent && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', backgroundColor: 'var(--color-accent)' }} />
-                )}
-
-                <div style={{ paddingLeft: insight.accent ? '12px' : '0', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <span style={{ flexShrink: 0, marginTop: '2px' }}>
-                    {insight.type === 'warning' && <Icons.warning size={22} strokeWidth={2} style={{ color: 'var(--color-accent)' }} />}
-                    {insight.type === 'positive' && <Icons.trendingUp size={22} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />}
-                    {insight.type === 'action' && <Icons.assignment size={22} strokeWidth={2} style={{ color: 'var(--color-muted)' }} />}
-                  </span>
-
-                  <div>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text)', marginBottom: '6px' }}>
-                      {insight.titre}
-                    </h4>
-                    <p style={{ fontSize: '13px', color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: '14px' }}>
-                      {insight.texte}
-                    </p>
-                    <Link href={insight.href}>
-                      <button style={{
-                        backgroundColor: insight.primary ? 'var(--color-primary)' : 'transparent',
-                        color: insight.primary ? 'white' : 'var(--color-primary)',
-                        border: insight.primary ? 'none' : 'none',
-                        cursor: 'pointer',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        letterSpacing: '0.15em',
-                        textTransform: 'uppercase',
-                        fontFamily: 'var(--font-body)',
-                        padding: insight.primary ? '8px 16px' : '0',
-                        borderRadius: '2px',
-                        textDecoration: insight.primary ? 'none' : 'underline',
-                        textUnderlineOffset: '3px',
-                      }}>
-                        {insight.cta} {!insight.primary && '→'}
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      </AppPage>
     </AppLayout>
+  )
+}
+
+function InsightCard({ title, value, description }: { title: string; value: string; description: string }) {
+  return (
+    <AppPanel className="p-5">
+      <p className="text-sm text-[var(--color-muted)]">{title}</p>
+      <p className="mt-1 text-lg font-semibold">{value}</p>
+      <p className="mt-2 text-sm text-[var(--color-muted)]">{description}</p>
+    </AppPanel>
   )
 }
