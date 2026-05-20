@@ -6,7 +6,7 @@ export function AppPage({ children }: { children: ReactNode }) {
       className="min-h-screen space-y-5 p-4 md:p-8"
       style={{
         background:
-          'radial-gradient(70rem 40rem at 85% -10%, rgba(91,33,182,0.18), transparent 55%), radial-gradient(50rem 30rem at 10% 0%, rgba(192,38,211,0.10), transparent 50%), var(--color-background)',
+          'radial-gradient(90rem 48rem at 85% -10%, rgba(91,33,182,0.34), transparent 58%), radial-gradient(60rem 38rem at 8% 2%, rgba(192,38,211,0.24), transparent 56%), radial-gradient(44rem 28rem at 55% 110%, rgba(79,70,229,0.18), transparent 62%), #f3effd',
       }}
     >
       {children}
@@ -19,10 +19,10 @@ export function AppPanel({ children, className = '' }: { children: ReactNode; cl
     <section
       className={`border shadow-sm ${className}`}
       style={{
-        borderColor: 'rgba(100,116,139,0.28)',
+        borderColor: 'rgba(91,33,182,0.32)',
         borderRadius: '2px',
         background:
-          'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,247,252,0.92) 100%)',
+          'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(238,231,255,0.9) 100%)',
       }}
     >
       {children}
