@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Module, UserModuleProgress } from '@/lib/supabase'
 import { Icons } from '@/components/layout/ui/icons'
+import { AppPage } from '@/components/ui/app-page'
 
 // ==================== NOUVEAU MAPPING CATÉGORIES ====================
 const categoriesConfig = {
@@ -59,9 +60,10 @@ export default function Bibliotheque() {
 
   return (
     <AppLayout>
+      <AppPage>
       <header style={{
-        backgroundColor: 'var(--color-surface)',
-        borderBottom: '1px solid var(--color-muted)',
+        backgroundColor: 'rgba(255,255,255,0.84)',
+        borderBottom: '1px solid rgba(100,116,139,0.28)',
         padding: '32px 40px',
         position: 'sticky',
         top: 0,
@@ -88,7 +90,7 @@ export default function Bibliotheque() {
           </div>
 
           {/* Barre de recherche */}
-          <div style={{ position: 'relative', width: '320px' }}>
+          <div className="search-wrap" style={{ position: 'relative', width: '320px' }}>
             <Icons.search
               size={20}
               strokeWidth={2.5}
@@ -112,8 +114,8 @@ export default function Bibliotheque() {
                 paddingRight: '16px',
                 paddingTop: '10px',
                 paddingBottom: '10px',
-                backgroundColor: 'var(--color-background)',
-                border: '1px solid var(--color-muted)',
+                backgroundColor: 'rgba(248,247,252,0.82)',
+                border: '1px solid rgba(100,116,139,0.28)',
                 borderRadius: '2px',
                 fontSize: '13px',
                 color: 'var(--color-text)',
@@ -156,7 +158,7 @@ export default function Bibliotheque() {
 
       <div style={{ padding: '40px', flex: 1 }}>
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div className="modules-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {[1,2,3,4].map(i => (
               <div key={i} className="skeleton" style={{ height: '200px', borderRadius: '2px' }} />
             ))}
@@ -171,7 +173,7 @@ export default function Bibliotheque() {
             <p style={{ fontSize: '16px' }}>Aucun module trouvé dans cette catégorie.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div className="modules-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {filteredModules.map(module => (
               <Link
                 href={`/lecon/${module.id}`}   // ← Mis à jour
@@ -235,7 +237,7 @@ export default function Bibliotheque() {
                       fontSize: '11px',
                       fontWeight: 600,
                       letterSpacing: '0.1em',
-                      backgroundColor: 'var(--color-background)',
+                      backgroundColor: 'rgba(248,247,252,0.82)',
                       border: '1px solid rgba(142,150,164,0.3)',
                       padding: '4px 8px'
                     }}>
@@ -262,6 +264,7 @@ export default function Bibliotheque() {
       </div>
 
       <style jsx>{`
+        .modules-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
         .module-card {
           background-color: var(--color-surface);
           border: 1px solid rgba(142,150,164,0.4);
@@ -278,7 +281,10 @@ export default function Bibliotheque() {
           border-color: rgba(0,51,204,0.4);
           transform: translateY(-2px);
         }
+        @media (max-width: 1100px) { .modules-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .search-wrap { width: 100% !important; max-width: 360px; } }
+        @media (max-width: 760px) { .modules-grid { grid-template-columns: 1fr; } }
       `}</style>
+          </AppPage>
     </AppLayout>
   )
 }

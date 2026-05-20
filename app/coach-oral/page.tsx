@@ -4,6 +4,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Message } from '@/lib/supabase'
 import { Icons } from '@/components/layout/ui/icons'
+import { AppPage } from '@/components/ui/app-page'
 
 const SUJET = 'Convaincre un ami de participer à un projet de quartier'
 
@@ -191,12 +192,13 @@ export default function CoachOralPage() {
 
   return (
     <AppLayout>
+      <AppPage>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         {/* Header */}
         <header style={{
           padding: '24px 40px',
-          borderBottom: '1px solid var(--color-muted)',
-          backgroundColor: 'var(--color-surface)',
+          borderBottom: '1px solid rgba(100,116,139,0.28)',
+          backgroundColor: 'rgba(255,255,255,0.84)',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'flex-start',
@@ -215,7 +217,7 @@ export default function CoachOralPage() {
             onClick={resetConversation}
             style={{
               background: 'none',
-              border: '1px solid var(--color-muted)',
+              border: '1px solid rgba(100,116,139,0.28)',
               borderRadius: '2px',
               cursor: 'pointer',
               color: 'var(--color-muted)',
@@ -242,9 +244,9 @@ export default function CoachOralPage() {
             maxWidth: '800px',
             display: 'flex',
             flexDirection: 'column',
-            borderLeft: '1px solid var(--color-muted)',
-            borderRight: '1px solid var(--color-muted)',
-            backgroundColor: 'var(--color-surface)',
+            borderLeft: '1px solid rgba(100,116,139,0.28)',
+            borderRight: '1px solid rgba(100,116,139,0.28)',
+            backgroundColor: 'rgba(255,255,255,0.84)',
             overflow: 'hidden',
           }}>
             {/* Messages */}
@@ -271,7 +273,7 @@ export default function CoachOralPage() {
                       width: '40px',
                       height: '40px',
                       borderRadius: '2px',
-                      border: '1px solid var(--color-muted)',
+                      border: '1px solid rgba(100,116,139,0.28)',
                       backgroundColor: msg.role === 'examiner' ? 'var(--color-background)' : 'var(--color-primary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -299,7 +301,7 @@ export default function CoachOralPage() {
                       fontSize: '14px',
                       lineHeight: 1.7,
                       ...(msg.role === 'examiner'
-                        ? { backgroundColor: 'var(--color-background)', border: '1px solid var(--color-muted)', color: 'var(--color-text)' }
+                        ? { backgroundColor: 'rgba(248,247,252,0.82)', border: '1px solid rgba(100,116,139,0.28)', color: 'var(--color-text)' }
                         : { backgroundColor: 'var(--color-primary)', color: 'white', textAlign: 'right' as const }),
                     }}>
                       {msg.content}
@@ -314,8 +316,8 @@ export default function CoachOralPage() {
                     width: '40px',
                     height: '40px',
                     borderRadius: '2px',
-                    border: '1px solid var(--color-muted)',
-                    backgroundColor: 'var(--color-background)',
+                    border: '1px solid rgba(100,116,139,0.28)',
+                    backgroundColor: 'rgba(248,247,252,0.82)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -325,8 +327,8 @@ export default function CoachOralPage() {
                   </div>
                   <div style={{
                     padding: '16px 20px',
-                    backgroundColor: 'var(--color-background)',
-                    border: '1px solid var(--color-muted)',
+                    backgroundColor: 'rgba(248,247,252,0.82)',
+                    border: '1px solid rgba(100,116,139,0.28)',
                     borderRadius: '2px',
                     display: 'flex',
                     alignItems: 'center',
@@ -349,13 +351,13 @@ export default function CoachOralPage() {
             </div>
 
             {/* Input Area */}
-            <div style={{ flexShrink: 0, padding: '20px 24px', borderTop: '1px solid var(--color-muted)', backgroundColor: 'var(--color-surface)' }}>
+            <div style={{ flexShrink: 0, padding: '20px 24px', borderTop: '1px solid var(--color-muted)', backgroundColor: 'rgba(255,255,255,0.84)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
                 <div style={{
                   flex: 1,
-                  border: '1px solid var(--color-muted)',
+                  border: '1px solid rgba(100,116,139,0.28)',
                   borderRadius: '2px',
-                  backgroundColor: 'var(--color-surface)',
+                  backgroundColor: 'rgba(255,255,255,0.84)',
                 }}>
                   <textarea
                     ref={textareaRef}
@@ -437,6 +439,7 @@ export default function CoachOralPage() {
           </div>
         </div>
       </div>
+          </AppPage>
     </AppLayout>
   )
 }

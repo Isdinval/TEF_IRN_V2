@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return NextResponse.json({ error: "OPENAI_API_KEY manquante" }, { status: 500 })
+  const openai = new OpenAI({ apiKey })
   try {
     const { messages, sujet, lastUserMessage } = await req.json()
     const systemPrompt = `Tu es un examinateur du TEF IRN simulant une épreuve orale sur le sujet: "${sujet}". Parle toujours en français formel. Pose des questions de relance courtes (2-4 phrases). Après 6-8 échanges, propose un bref feedback.`
