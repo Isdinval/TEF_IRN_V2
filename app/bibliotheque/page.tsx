@@ -90,7 +90,7 @@ export default function Bibliotheque() {
           </div>
 
           {/* Barre de recherche */}
-          <div style={{ position: 'relative', width: '320px' }}>
+          <div className="search-wrap" style={{ position: 'relative', width: '320px' }}>
             <Icons.search
               size={20}
               strokeWidth={2.5}
@@ -158,7 +158,7 @@ export default function Bibliotheque() {
 
       <div style={{ padding: '40px', flex: 1 }}>
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div className="modules-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {[1,2,3,4].map(i => (
               <div key={i} className="skeleton" style={{ height: '200px', borderRadius: '2px' }} />
             ))}
@@ -173,7 +173,7 @@ export default function Bibliotheque() {
             <p style={{ fontSize: '16px' }}>Aucun module trouvé dans cette catégorie.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div className="modules-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
             {filteredModules.map(module => (
               <Link
                 href={`/lecon/${module.id}`}   // ← Mis à jour
@@ -264,6 +264,7 @@ export default function Bibliotheque() {
       </div>
 
       <style jsx>{`
+        .modules-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
         .module-card {
           background-color: var(--color-surface);
           border: 1px solid rgba(142,150,164,0.4);
@@ -280,6 +281,8 @@ export default function Bibliotheque() {
           border-color: rgba(0,51,204,0.4);
           transform: translateY(-2px);
         }
+        @media (max-width: 1100px) { .modules-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .search-wrap { width: 100% !important; max-width: 360px; } }
+        @media (max-width: 760px) { .modules-grid { grid-template-columns: 1fr; } }
       `}</style>
           </AppPage>
     </AppLayout>

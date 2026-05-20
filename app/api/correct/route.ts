@@ -3,7 +3,6 @@ import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { updateCompetencesFromEcrit, ScoresEcrit } from '@/lib/scoring'
  
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
  
 function getServerSupabase() {
   return createClient(
@@ -13,6 +12,9 @@ function getServerSupabase() {
 }
  
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return NextResponse.json({ error: "OPENAI_API_KEY manquante" }, { status: 500 })
+  const openai = new OpenAI({ apiKey })
   try {
     const { texte, prompt_texte, section, soumission_id, user_id } = await req.json()
  
