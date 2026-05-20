@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
