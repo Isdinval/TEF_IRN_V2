@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Exercice } from '@/lib/supabase'
 import { Icons } from '@/components/layout/ui/icons'
+import { AppPage } from '@/components/ui/app-page'
 
 type FeedbackState = {
   correct: boolean
@@ -135,8 +136,9 @@ export default function ExercicesPage() {
     const pct = Math.round((score.correct / score.total) * 100)
     return (
       <AppLayout>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', backgroundColor: 'var(--color-background)' }}>
-          <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-muted)', borderRadius: '2px', padding: '64px', textAlign: 'center', maxWidth: '500px', width: '100%' }}>
+      <AppPage>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px', backgroundColor: 'rgba(248,247,252,0.82)' }}>
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.84)', border: '1px solid rgba(100,116,139,0.28)', borderRadius: '2px', padding: '64px', textAlign: 'center', maxWidth: '500px', width: '100%' }}>
             <div style={{ fontFamily: 'var(--font-heading)', fontSize: '72px', fontWeight: 600, color: pct >= 70 ? 'var(--color-primary)' : 'var(--color-accent)', lineHeight: 1, marginBottom: '16px' }}>
               {pct}%
             </div>
@@ -179,7 +181,7 @@ export default function ExercicesPage() {
                 style={{ 
                   backgroundColor: 'transparent', 
                   color: 'var(--color-text)', 
-                  border: '1px solid var(--color-muted)', 
+                  border: '1px solid rgba(100,116,139,0.28)', 
                   borderRadius: '2px', 
                   padding: '12px 24px', 
                   fontSize: '11px', 
@@ -195,12 +197,14 @@ export default function ExercicesPage() {
             </div>
           </div>
         </div>
-      </AppLayout>
+            </AppPage>
+    </AppLayout>
     )
   }
 
   return (
     <AppLayout>
+      <AppPage>
       {/* Header */}
       <header style={{
         display: 'flex',
@@ -208,8 +212,8 @@ export default function ExercicesPage() {
         justifyContent: 'space-between',
         padding: '0 40px',
         height: '64px',
-        backgroundColor: 'var(--color-surface)',
-        borderBottom: '1px solid var(--color-muted)',
+        backgroundColor: 'rgba(255,255,255,0.84)',
+        borderBottom: '1px solid rgba(100,116,139,0.28)',
         flexShrink: 0,
       }}>
         <button
@@ -247,11 +251,11 @@ export default function ExercicesPage() {
       {/* Score */}
       <div style={{ 
         padding: '12px 40px', 
-        borderBottom: '1px solid var(--color-muted)', 
+        borderBottom: '1px solid rgba(100,116,139,0.28)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        backgroundColor: 'var(--color-background)', 
+        backgroundColor: 'rgba(248,247,252,0.82)', 
         flexShrink: 0 
       }}>
         <span style={{ fontSize: '13px', color: 'var(--color-muted)' }}>
@@ -272,8 +276,8 @@ export default function ExercicesPage() {
           <div style={{
             width: '100%',
             maxWidth: '800px',
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-muted)',
+            backgroundColor: 'rgba(255,255,255,0.84)',
+            border: '1px solid rgba(100,116,139,0.28)',
             borderRadius: '2px',
             padding: '64px',
             display: 'flex',
@@ -331,8 +335,8 @@ export default function ExercicesPage() {
               <button
                 onClick={handleNoError}
                 style={{
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1px solid var(--color-muted)',
+                  backgroundColor: 'rgba(255,255,255,0.84)',
+                  border: '1px solid rgba(100,116,139,0.28)',
                   borderRadius: '2px',
                   color: 'var(--color-text)',
                   fontSize: '11px',
@@ -414,6 +418,7 @@ export default function ExercicesPage() {
           border-color: rgba(142,150,164,0.3);
         }
       `}</style>
+      </AppPage>
     </AppLayout>
   )
 }

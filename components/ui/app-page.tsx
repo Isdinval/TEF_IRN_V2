@@ -1,19 +1,41 @@
 import { ReactNode } from 'react'
 
 export function AppPage({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,#ede9fe,transparent_45%),var(--color-background)] p-4 md:p-8 space-y-5">{children}</div>
+  return (
+    <div
+      className="min-h-screen space-y-5 p-4 md:p-8"
+      style={{
+        background:
+          'radial-gradient(70rem 40rem at 85% -10%, rgba(91,33,182,0.18), transparent 55%), radial-gradient(50rem 30rem at 10% 0%, rgba(192,38,211,0.10), transparent 50%), var(--color-background)',
+      }}
+    >
+      {children}
+    </div>
+  )
 }
 
 export function AppPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-violet-200/60 bg-gradient-to-b from-white to-violet-50/40 shadow-sm ${className}`}>{children}</section>
+  return (
+    <section
+      className={`border shadow-sm ${className}`}
+      style={{
+        borderColor: 'rgba(100,116,139,0.28)',
+        borderRadius: '2px',
+        background:
+          'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,247,252,0.92) 100%)',
+      }}
+    >
+      {children}
+    </section>
+  )
 }
 
 export function PageErrorState({ title, message, onRetry }: { title: string; message: string; onRetry: () => void }) {
   return (
-    <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-900">
+    <div className="p-6" style={{ borderRadius: '2px', border: '1px solid #fecaca', background: '#fef2f2', color: '#881337' }}>
       <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="text-sm mt-1">{message}</p>
-      <button onClick={onRetry} className="mt-4 rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium hover:bg-rose-100">
+      <p className="mt-1 text-sm">{message}</p>
+      <button onClick={onRetry} className="mt-4 px-4 py-2 text-sm font-medium" style={{ borderRadius: '2px', border: '1px solid #fca5a5', background: 'white' }}>
         Réessayer
       </button>
     </div>

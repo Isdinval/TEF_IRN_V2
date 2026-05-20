@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display:'flex', minHeight:'100vh' }}>
       <Sidebar />
-      <main style={{ flex:1, marginLeft:'var(--nav-width)', display:'flex', flexDirection:'column', minHeight:'100vh', backgroundColor:'var(--color-background)' }}>
+      <main style={{ flex:1, marginLeft:'var(--nav-width)', display:'flex', flexDirection:'column', minHeight:'100vh', background: 'radial-gradient(60rem 30rem at 100% -5%, rgba(91,33,182,0.12), transparent 55%), var(--color-background)' }}>
         {children}
       </main>
     </div>
