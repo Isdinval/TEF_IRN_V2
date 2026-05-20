@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import AppLayout from '@/components/layout/AppLayout'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
+import { AppPage } from '@/components/ui/app-page'
 
 type EcriturePrompt = {
   id: string
@@ -178,9 +179,9 @@ export default function EcritureClient() {
     setSelectedSection(section)
   }
 
-  if (loading) return <AppLayout><div style={{ padding: '80px', textAlign: 'center' }}>Préparation du meilleur exercice pour vous...</div></AppLayout>
-  if (error) return <AppLayout><div style={{ padding: '80px', textAlign: 'center', color: 'red' }}>{error}</div></AppLayout>
-  if (!currentPrompt) return <AppLayout><div>Aucun sujet disponible.</div></AppLayout>
+  if (loading) return <AppLayout><AppPage><div style={{ padding: '80px', textAlign: 'center' }}>Préparation du meilleur exercice pour vous...</div></AppPage></AppLayout>
+  if (error) return <AppLayout><AppPage><div style={{ padding: '80px', textAlign: 'center', color: 'red' }}>{error}</div></AppPage></AppLayout>
+  if (!currentPrompt) return <AppLayout><AppPage><div style={{ padding: '80px' }}>Aucun sujet disponible.</div></AppPage></AppLayout>
 
   const motColor = motCount > currentPrompt.mots_max ? 'var(--color-accent)' : 'var(--color-text)'
   const checklist = [
@@ -191,13 +192,14 @@ export default function EcritureClient() {
 
   return (
     <AppLayout>
+      <AppPage>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
         {/* Header */}
         <header style={{ 
           padding: '12px 32px', 
-          borderBottom: '1px solid var(--color-muted)', 
-          backgroundColor: 'var(--color-surface)', 
+          borderBottom: '1px solid rgba(100,116,139,0.28)', 
+          backgroundColor: 'rgba(255,255,255,0.84)', 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -207,19 +209,19 @@ export default function EcritureClient() {
           </button>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => filterSection('ALL')} className={selectedSection === 'ALL' ? 'active' : ''} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'ALL' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'ALL' ? 'white' : 'inherit' }}>
+            <button onClick={() => filterSection('ALL')} className={selectedSection === 'ALL' ? 'active' : ''} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid rgba(100,116,139,0.28)', background: selectedSection === 'ALL' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'ALL' ? 'white' : 'inherit' }}>
               Tous
             </button>
-            <button onClick={() => filterSection('A')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'A' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'A' ? 'white' : 'inherit' }}>
+            <button onClick={() => filterSection('A')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid rgba(100,116,139,0.28)', background: selectedSection === 'A' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'A' ? 'white' : 'inherit' }}>
               Section A
             </button>
-            <button onClick={() => filterSection('B')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid var(--color-muted)', background: selectedSection === 'B' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'B' ? 'white' : 'inherit' }}>
+            <button onClick={() => filterSection('B')} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid rgba(100,116,139,0.28)', background: selectedSection === 'B' ? 'var(--color-primary)' : 'transparent', color: selectedSection === 'B' ? 'white' : 'inherit' }}>
               Section B
             </button>
 
             <button 
               onClick={changePrompt}
-              style={{ padding: '6px 16px', marginLeft: '12px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-muted)', borderRadius: '4px' }}
+              style={{ padding: '6px 16px', marginLeft: '12px', backgroundColor: 'rgba(248,247,252,0.82)', border: '1px solid rgba(100,116,139,0.28)', borderRadius: '4px' }}
             >
               🔄 Autre sujet
             </button>
@@ -231,8 +233,8 @@ export default function EcritureClient() {
           {/* Panneau Consigne */}
           <aside style={{ 
             width: '38%', 
-            backgroundColor: 'var(--color-background)', 
-            borderRight: '1px solid var(--color-muted)', 
+            backgroundColor: 'rgba(248,247,252,0.82)', 
+            borderRight: '1px solid rgba(100,116,139,0.28)', 
             overflowY: 'auto', 
             padding: '40px' 
           }}>
@@ -270,7 +272,7 @@ export default function EcritureClient() {
           </aside>
 
           {/* Zone d'écriture */}
-          <section style={{ flex: 1, backgroundColor: 'var(--color-surface)', display: 'flex', flexDirection: 'column' }}>
+          <section style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.84)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, padding: '48px', overflowY: 'auto' }}>
               <textarea
                 autoFocus
@@ -294,7 +296,7 @@ export default function EcritureClient() {
 
             <div style={{ 
               borderTop: '1px solid var(--color-muted)', 
-              backgroundColor: 'var(--color-background)', 
+              backgroundColor: 'rgba(248,247,252,0.82)', 
               padding: '16px 32px', 
               display: 'flex', 
               alignItems: 'center', 
@@ -331,6 +333,7 @@ export default function EcritureClient() {
           </section>
         </div>
       </div>
+      </AppPage>
     </AppLayout>
   )
 }
